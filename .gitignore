@@ -1,0 +1,28 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# User-specific Xcode settings
+xcuserdata/
+
+# Swift Package Manager
+.swiftpm/
+Packages/
+Package.pins
+Package.resolved
+
+# CocoaPods (if used later)
+Pods/
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# App Store Connect
+*.ipa
+*.dSYM.zip
+*.dSYM
