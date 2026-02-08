@@ -7,6 +7,7 @@ struct Badge: Codable, Identifiable, Hashable {
     let name: String
     let description: String
     let iconEmoji: String
+    let earnedByPercent: Int?
 }
 
 // MARK: - Earned Badge (from player stats response)
