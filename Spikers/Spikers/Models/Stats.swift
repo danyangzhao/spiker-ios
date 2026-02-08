@@ -8,6 +8,8 @@ struct PlayerStatsResponse: Codable {
     let partnerChemistry: [PartnerStat]
     let nemesisOpponents: [NemesisStat]
     let badges: [EarnedBadge]
+    let allBadges: [Badge]?
+    let badgeProgress: [BadgeProgress]?
 }
 
 struct PlayerBasicInfo: Codable {
@@ -28,6 +30,15 @@ struct LifetimeStats: Codable {
     let pointsAgainst: Int
     let avgPointDiff: Double
     let sessionsAttended: Int
+    let currentWinStreak: Int?
+    let longestWinStreak: Int?
+    let closeGameWins: Int?
+    let closeGameLosses: Int?
+    let blowoutWins: Int?
+    let blowoutLosses: Int?
+    let avgMarginOfVictory: Double?
+    let avgMarginOfDefeat: Double?
+    let pointsPerGame: Double?
 }
 
 // MARK: - Partner Chemistry

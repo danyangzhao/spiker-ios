@@ -53,6 +53,12 @@ struct SessionSummary: Codable {
     let playerOfTheDay: AwardPlayerOfDay?
     let ironman: AwardIronman?
     let socialButterfly: AwardSocialButterfly?
+    let clutchPlayer: AwardClutchPlayer?
+    let theWall: AwardTheWall?
+    let hotStreak: AwardHotStreak?
+    let closestGame: GameHighlight?
+    let biggestBlowout: GameHighlight?
+    let highlights: [String]?
     let playerStats: [SessionPlayerStat]?
 }
 
@@ -88,6 +94,33 @@ struct AwardSocialButterfly: Codable {
     let name: String
     let emoji: String
     let uniqueTeammates: Int
+}
+
+struct AwardClutchPlayer: Codable {
+    let id: String
+    let name: String
+    let emoji: String
+    let closeGameWins: Int
+}
+
+struct AwardTheWall: Codable {
+    let id: String
+    let name: String
+    let emoji: String
+    let avgPointsAgainst: Double
+}
+
+struct AwardHotStreak: Codable {
+    let id: String
+    let name: String
+    let emoji: String
+    let streak: Int
+}
+
+struct GameHighlight: Codable {
+    let gameNumber: Int
+    let scoreA: Int
+    let scoreB: Int
 }
 
 struct SessionPlayerStat: Codable, Identifiable {

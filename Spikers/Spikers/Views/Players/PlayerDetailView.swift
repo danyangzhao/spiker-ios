@@ -46,8 +46,12 @@ struct PlayerDetailView: View {
                                 nemeses: stats.nemesisOpponents
                             )
                         case 2:
-                            BadgeGrid(badges: stats.badges)
-                                .padding()
+                            BadgeGrid(
+                                badges: stats.badges,
+                                allBadges: stats.allBadges ?? [],
+                                badgeProgress: stats.badgeProgress ?? []
+                            )
+                            .padding()
                         default:
                             EmptyView()
                         }
@@ -146,6 +150,62 @@ struct PlayerStatsTab: View {
                 )
             }
 
+            // Win Streaks
+            if let current = stats.currentWinStreak, let longest = stats.longestWinStreak, longest > 0 {
+                VStack(spacing: 8) {
+                    HStack {
+                        Text("Win Streaks")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(AppTheme.foreground)
+                        Spacer()
+                    }
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible()),
+                    ], spacing: 12) {
+                        StatCard(
+                            label: "Current Streak",
+                            value: "\(current)",
+                            valueColor: current > 0 ? AppTheme.win : AppTheme.foreground
+                        )
+                        StatCard(
+                            label: "Longest Streak",
+                            value: "\(longest)",
+                            valueColor: AppTheme.accent
+                        )
+                    }
+                }
+            }
+
+            // Close Games & Blowouts
+            if let cgW = stats.closeGameWins, let cgL = stats.closeGameLosses,
+               let bW = stats.blowoutWins, let bL = stats.blowoutLosses,
+               (cgW + cgL + bW + bL) > 0 {
+                VStack(spacing: 8) {
+                    HStack {
+                        Text("Game Breakdown")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(AppTheme.foreground)
+                        Spacer()
+                    }
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible()),
+                    ], spacing: 12) {
+                        StatCard(
+                            label: "Close Games",
+                            value: "\(cgW)W-\(cgL)L"
+                        )
+                        StatCard(
+                            label: "Blowouts",
+                            value: "\(bW)W-\(bL)L"
+                        )
+                    }
+                }
+            }
+
             // Additional stats
             VStack(spacing: 8) {
                 StatRow(label: "Sessions Attended", value: "\(stats.sessionsAttended)")
@@ -159,6 +219,29 @@ struct PlayerStatsTab: View {
                     value: String(format: "%+.1f", stats.avgPointDiff),
                     valueColor: stats.avgPointDiff >= 0 ? AppTheme.win : AppTheme.loss
                 )
+                if let ppg = stats.pointsPerGame, ppg > 0 {
+                    Divider().background(AppTheme.card03)
+                    StatRow(
+                        label: "Points Per Game",
+                        value: String(format: "%.1f", ppg)
+                    )
+                }
+                if let mov = stats.avgMarginOfVictory, mov > 0 {
+                    Divider().background(AppTheme.card03)
+                    StatRow(
+                        label: "Avg Margin of Victory",
+                        value: String(format: "+%.1f", mov),
+                        valueColor: AppTheme.win
+                    )
+                }
+                if let mod = stats.avgMarginOfDefeat, mod > 0 {
+                    Divider().background(AppTheme.card03)
+                    StatRow(
+                        label: "Avg Margin of Defeat",
+                        value: String(format: "-%.1f", mod),
+                        valueColor: AppTheme.loss
+                    )
+                }
             }
             .cardStyle()
         }

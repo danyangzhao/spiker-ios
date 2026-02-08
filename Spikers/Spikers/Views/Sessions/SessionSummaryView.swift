@@ -24,6 +24,23 @@ struct SessionSummaryView: View {
             } else if let summary {
                 ScrollView {
                     VStack(spacing: 16) {
+                        // Highlights
+                        if let highlights = summary.highlights, !highlights.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(highlights, id: \.self) { highlight in
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "sparkles")
+                                            .font(.caption)
+                                            .foregroundColor(AppTheme.accent)
+                                        Text(highlight)
+                                            .font(.subheadline)
+                                            .foregroundColor(AppTheme.foreground)
+                                    }
+                                }
+                            }
+                            .cardStyle()
+                        }
+
                         // Awards
                         if let potd = summary.playerOfTheDay {
                             AwardRow(
@@ -52,6 +69,36 @@ struct SessionSummaryView: View {
                                 playerEmoji: butterfly.emoji,
                                 playerName: butterfly.name,
                                 detail: "\(butterfly.uniqueTeammates) teammates"
+                            )
+                        }
+
+                        if let clutch = summary.clutchPlayer {
+                            AwardRow(
+                                emoji: "🎯",
+                                title: "Clutch Player",
+                                playerEmoji: clutch.emoji,
+                                playerName: clutch.name,
+                                detail: "\(clutch.closeGameWins) close wins"
+                            )
+                        }
+
+                        if let wall = summary.theWall {
+                            AwardRow(
+                                emoji: "🧱",
+                                title: "The Wall",
+                                playerEmoji: wall.emoji,
+                                playerName: wall.name,
+                                detail: String(format: "%.1f avg pts against", wall.avgPointsAgainst)
+                            )
+                        }
+
+                        if let streak = summary.hotStreak {
+                            AwardRow(
+                                emoji: "🔥",
+                                title: "Hot Streak",
+                                playerEmoji: streak.emoji,
+                                playerName: streak.name,
+                                detail: "\(streak.streak) wins in a row"
                             )
                         }
                     }

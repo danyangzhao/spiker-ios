@@ -18,3 +18,10 @@ struct EarnedBadge: Codable, Identifiable {
     let iconEmoji: String
     let earnedAt: String
 }
+
+// MARK: - Badge Progress (for locked badges)
+struct BadgeProgress: Codable {
+    let code: String
+    let current: Int
+    let target: Int
+}

@@ -217,12 +217,43 @@ struct GamesTab: View {
 struct SummaryTab: View {
     @Bindable var viewModel: SessionDetailViewModel
 
+    private var hasAnyAward: Bool {
+        guard let summary = viewModel.summary else { return false }
+        return summary.playerOfTheDay != nil
+            || summary.ironman != nil
+            || summary.socialButterfly != nil
+            || summary.clutchPlayer != nil
+            || summary.theWall != nil
+            || summary.hotStreak != nil
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             if let summary = viewModel.summary {
                 // Total games
                 if let total = summary.totalGames {
                     StatCard(label: "Total Games", value: "\(total)")
+                }
+
+                // Highlights
+                if let highlights = summary.highlights, !highlights.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Highlights")
+                            .font(.headline)
+                            .foregroundColor(AppTheme.foreground)
+
+                        ForEach(highlights, id: \.self) { highlight in
+                            HStack(spacing: 8) {
+                                Image(systemName: "sparkles")
+                                    .font(.caption)
+                                    .foregroundColor(AppTheme.accent)
+                                Text(highlight)
+                                    .font(.subheadline)
+                                    .foregroundColor(AppTheme.foreground)
+                            }
+                        }
+                    }
+                    .cardStyle()
                 }
 
                 // Awards
@@ -261,13 +292,73 @@ struct SummaryTab: View {
                         )
                     }
 
-                    if summary.playerOfTheDay == nil && summary.ironman == nil && summary.socialButterfly == nil {
+                    if let clutch = summary.clutchPlayer {
+                        AwardRow(
+                            emoji: "🎯",
+                            title: "Clutch Player",
+                            playerEmoji: clutch.emoji,
+                            playerName: clutch.name,
+                            detail: "\(clutch.closeGameWins) close wins"
+                        )
+                    }
+
+                    if let wall = summary.theWall {
+                        AwardRow(
+                            emoji: "🧱",
+                            title: "The Wall",
+                            playerEmoji: wall.emoji,
+                            playerName: wall.name,
+                            detail: String(format: "%.1f avg pts against", wall.avgPointsAgainst)
+                        )
+                    }
+
+                    if let streak = summary.hotStreak {
+                        AwardRow(
+                            emoji: "🔥",
+                            title: "Hot Streak",
+                            playerEmoji: streak.emoji,
+                            playerName: streak.name,
+                            detail: "\(streak.streak) wins in a row"
+                        )
+                    }
+
+                    if !hasAnyAward {
                         Text("No awards yet - play more games!")
                             .font(.subheadline)
                             .foregroundColor(AppTheme.secondaryText)
                     }
                 }
                 .cardStyle()
+
+                // Game Spotlights
+                if summary.closestGame != nil || summary.biggestBlowout != nil {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Game Spotlights")
+                            .font(.headline)
+                            .foregroundColor(AppTheme.foreground)
+
+                        if let closest = summary.closestGame {
+                            GameSpotlightRow(
+                                icon: "flame",
+                                title: "Closest Game",
+                                gameNumber: closest.gameNumber,
+                                scoreA: closest.scoreA,
+                                scoreB: closest.scoreB
+                            )
+                        }
+
+                        if let blowout = summary.biggestBlowout {
+                            GameSpotlightRow(
+                                icon: "bolt.fill",
+                                title: "Biggest Blowout",
+                                gameNumber: blowout.gameNumber,
+                                scoreA: blowout.scoreA,
+                                scoreB: blowout.scoreB
+                            )
+                        }
+                    }
+                    .cardStyle()
+                }
 
                 // Player Stats Table
                 if let stats = summary.playerStats, !stats.isEmpty {
@@ -305,6 +396,43 @@ struct SummaryTab: View {
             }
         }
         .padding()
+    }
+}
+
+// MARK: - Game Spotlight Row
+struct GameSpotlightRow: View {
+    let icon: String
+    let title: String
+    let gameNumber: Int
+    let scoreA: Int
+    let scoreB: Int
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(AppTheme.accent)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundColor(AppTheme.secondaryText)
+                Text("Game \(gameNumber)")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(AppTheme.foreground)
+            }
+
+            Spacer()
+
+            Text("\(scoreA) - \(scoreB)")
+                .font(.subheadline)
+                .fontWeight(.bold)
+                .foregroundColor(AppTheme.accent)
+        }
+        .padding(8)
+        .background(AppTheme.card02)
+        .cornerRadius(10)
     }
 }
 
