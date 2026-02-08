@@ -104,6 +104,12 @@ struct LockedBadgeCard: View {
         return Double(progress.current) / Double(progress.target)
     }
 
+    /// Whether this badge has numeric progress to display
+    private var showProgress: Bool {
+        guard let progress = progress else { return false }
+        return progress.target > 1
+    }
+
     var body: some View {
         VStack(spacing: 6) {
             Text("🔒")
@@ -124,17 +130,17 @@ struct LockedBadgeCard: View {
                 .lineLimit(2)
                 .opacity(0.7)
 
-            // Progress bar (only for badges with numeric progress)
-            if let progress = progress, progress.target > 1 {
-                VStack(spacing: 2) {
-                    ProgressView(value: progressFraction)
-                        .tint(AppTheme.accent)
+            // Always render progress area to keep card heights consistent.
+            // Hidden (but still taking up space) when there's no numeric progress.
+            VStack(spacing: 2) {
+                ProgressView(value: showProgress ? progressFraction : 0)
+                    .tint(AppTheme.accent)
 
-                    Text("\(progress.current)/\(progress.target)")
-                        .font(.system(size: 9))
-                        .foregroundColor(AppTheme.secondaryText)
-                }
+                Text(showProgress ? "\(progress!.current)/\(progress!.target)" : " ")
+                    .font(.system(size: 9))
+                    .foregroundColor(AppTheme.secondaryText)
             }
+            .opacity(showProgress ? 1 : 0)
         }
         .frame(maxWidth: .infinity)
         .padding(12)
