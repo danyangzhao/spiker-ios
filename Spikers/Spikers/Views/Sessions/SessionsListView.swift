@@ -9,13 +9,13 @@ struct SessionsListView: View {
             ZStack {
                 AppTheme.background.ignoresSafeArea()
 
-                if viewModel.isLoading && viewModel.sessions.isEmpty {
+                if viewModel.isLoading && !viewModel.hasVisibleSessions {
                     LoadingView(message: "Loading sessions...")
-                } else if let error = viewModel.errorMessage, viewModel.sessions.isEmpty {
+                } else if let error = viewModel.errorMessage, !viewModel.hasVisibleSessions {
                     ErrorView(message: error) {
                         Task { await viewModel.loadSessions() }
                     }
-                } else if viewModel.sessions.isEmpty {
+                } else if !viewModel.hasVisibleSessions {
                     EmptyStateView(
                         icon: "calendar",
                         title: "No Sessions Yet",

@@ -50,10 +50,73 @@ struct SpikersTests {
         #expect(client.baseURL == "https://spikers-production.up.railway.app")
     }
 
+    // MARK: - HiddenSessionsManager Tests
+
+    /// Creates a fresh HiddenSessionsManager backed by a unique UserDefaults suite.
+    /// Each call gets its own suite so parallel tests don't interfere with each other.
+    private func makeTestManager() -> HiddenSessionsManager {
+        let suiteName = "com.spikers.tests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        return HiddenSessionsManager(defaults: defaults)
+    }
+
+    @Test func hiddenSessionsManagerStartsEmpty() async throws {
+        let manager = makeTestManager()
+        #expect(manager.hiddenIds().isEmpty)
+    }
+
+    @Test func hiddenSessionsManagerHideAddsId() async throws {
+        let manager = makeTestManager()
+
+        manager.hide("session-A")
+        #expect(manager.hiddenIds().contains("session-A"))
+        #expect(manager.hiddenIds().count == 1)
+    }
+
+    @Test func hiddenSessionsManagerHideMultipleIds() async throws {
+        let manager = makeTestManager()
+
+        manager.hide("session-A")
+        manager.hide("session-B")
+        #expect(manager.hiddenIds() == Set(["session-A", "session-B"]))
+    }
+
+    @Test func hiddenSessionsManagerHideDuplicateIsNoOp() async throws {
+        let manager = makeTestManager()
+
+        manager.hide("session-A")
+        manager.hide("session-A")
+        #expect(manager.hiddenIds().count == 1)
+    }
+
+    @Test func hiddenSessionsManagerUnhideRemovesId() async throws {
+        let manager = makeTestManager()
+
+        manager.hide("session-A")
+        manager.hide("session-B")
+        manager.unhide("session-A")
+
+        #expect(!manager.hiddenIds().contains("session-A"))
+        #expect(manager.hiddenIds().contains("session-B"))
+    }
+
+    @Test func hiddenSessionsManagerPersistsAcrossInstances() async throws {
+        let suiteName = "com.spikers.tests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+
+        // Hide a session with one manager instance
+        let manager1 = HiddenSessionsManager(defaults: defaults)
+        manager1.hide("session-X")
+
+        // Create a brand-new manager instance using the same defaults
+        let manager2 = HiddenSessionsManager(defaults: defaults)
+        #expect(manager2.hiddenIds().contains("session-X"))
+    }
+
     // MARK: - Session Deletion Tests
 
     @Test func deleteSessionRemovesFromList() async throws {
-        let vm = SessionsViewModel()
+        let vm = SessionsViewModel(hiddenSessionsManager: makeTestManager())
 
         // Add a fake session to the list
         let session = Session(
@@ -70,12 +133,16 @@ struct SpikersTests {
         // Delete it
         vm.deleteSession(session)
 
-        // Should be gone
+        // Should be gone from the list
         #expect(vm.sessions.isEmpty)
+
+        // Should be persisted in the hidden set
+        #expect(vm.hiddenSessionIds.contains("test-1"))
+        #expect(vm.hiddenSessionsManager.hiddenIds().contains("test-1"))
     }
 
     @Test func requestDeleteSessionWithNoGamesDeletesImmediately() async throws {
-        let vm = SessionsViewModel()
+        let vm = SessionsViewModel(hiddenSessionsManager: makeTestManager())
 
         // Session with 0 games
         let session = Session(
@@ -94,10 +161,11 @@ struct SpikersTests {
         #expect(vm.sessions.isEmpty)
         #expect(vm.showDeleteConfirmation == false)
         #expect(vm.sessionToDelete == nil)
+        #expect(vm.hiddenSessionIds.contains("test-2"))
     }
 
     @Test func requestDeleteSessionWithGamesShowsConfirmation() async throws {
-        let vm = SessionsViewModel()
+        let vm = SessionsViewModel(hiddenSessionsManager: makeTestManager())
 
         // Session with 3 games
         let session = Session(
@@ -119,7 +187,7 @@ struct SpikersTests {
     }
 
     @Test func confirmDeleteSessionRemovesAndResetsState() async throws {
-        let vm = SessionsViewModel()
+        let vm = SessionsViewModel(hiddenSessionsManager: makeTestManager())
 
         // Session with games
         let session = Session(
@@ -143,6 +211,43 @@ struct SpikersTests {
         #expect(vm.sessions.isEmpty)
         #expect(vm.showDeleteConfirmation == false)
         #expect(vm.sessionToDelete == nil)
+        #expect(vm.hiddenSessionIds.contains("test-4"))
+    }
+
+    @Test func hiddenSessionsFilteredFromComputedProperties() async throws {
+        let manager = makeTestManager()
+        manager.hide("hidden-1")
+        let vm = SessionsViewModel(hiddenSessionsManager: manager)
+
+        // Add a mix of visible and hidden sessions
+        vm.sessions = [
+            Session(id: "hidden-1", date: "2026-02-07T00:00:00.000Z", location: nil,
+                    createdAt: "2026-02-07T00:00:00.000Z", status: .UPCOMING, _count: nil),
+            Session(id: "visible-1", date: "2026-02-07T00:00:00.000Z", location: nil,
+                    createdAt: "2026-02-07T00:00:00.000Z", status: .UPCOMING, _count: nil),
+            Session(id: "visible-2", date: "2026-02-07T00:00:00.000Z", location: nil,
+                    createdAt: "2026-02-07T00:00:00.000Z", status: .COMPLETED, _count: nil),
+        ]
+
+        // hidden-1 is UPCOMING but should be filtered out
+        #expect(vm.upcomingSessions.count == 1)
+        #expect(vm.upcomingSessions.first?.id == "visible-1")
+        #expect(vm.completedSessions.count == 1)
+        #expect(vm.hasVisibleSessions == true)
+    }
+
+    @Test func hasVisibleSessionsFalseWhenAllHidden() async throws {
+        let manager = makeTestManager()
+        manager.hide("only-session")
+        let vm = SessionsViewModel(hiddenSessionsManager: manager)
+
+        vm.sessions = [
+            Session(id: "only-session", date: "2026-02-07T00:00:00.000Z", location: nil,
+                    createdAt: "2026-02-07T00:00:00.000Z", status: .UPCOMING, _count: nil),
+        ]
+
+        #expect(vm.hasVisibleSessions == false)
+        #expect(vm.upcomingSessions.isEmpty)
     }
 
     // MARK: - Edit Session Tests

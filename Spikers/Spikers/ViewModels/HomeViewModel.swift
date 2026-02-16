@@ -13,6 +13,7 @@ class HomeViewModel {
 
     private let playerService = PlayerService()
     private let sessionService = SessionService()
+    private let hiddenSessionsManager = HiddenSessionsManager()
 
     /// Top 5 players sorted by rating (descending)
     var leaderboard: [Player] {
@@ -44,10 +45,13 @@ class HomeViewModel {
             let (fetchedPlayers, fetchedLive, fetchedUpcoming, fetchedRecent) =
                 try await (playersTask, liveTask, upcomingTask, recentTask)
 
+            // Filter out any sessions the user has hidden locally
+            let hiddenIds = hiddenSessionsManager.hiddenIds()
+
             players = fetchedPlayers
-            liveSessions = fetchedLive
-            upcomingSessions = fetchedUpcoming
-            recentSessions = fetchedRecent
+            liveSessions = fetchedLive.filter { !hiddenIds.contains($0.id) }
+            upcomingSessions = fetchedUpcoming.filter { !hiddenIds.contains($0.id) }
+            recentSessions = fetchedRecent.filter { !hiddenIds.contains($0.id) }
         } catch {
             errorMessage = error.localizedDescription
         }

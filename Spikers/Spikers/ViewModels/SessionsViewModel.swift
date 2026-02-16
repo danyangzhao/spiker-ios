@@ -18,24 +18,41 @@ class SessionsViewModel {
     var sessionToDelete: Session? = nil
     var showDeleteConfirmation = false
 
-    private let sessionService = SessionService()
+    // Locally hidden session IDs (persisted in UserDefaults)
+    var hiddenSessionIds: Set<String> = []
 
-    /// Sessions grouped by status
+    private let sessionService = SessionService()
+    let hiddenSessionsManager: HiddenSessionsManager
+
+    init(hiddenSessionsManager: HiddenSessionsManager = HiddenSessionsManager()) {
+        self.hiddenSessionsManager = hiddenSessionsManager
+        self.hiddenSessionIds = hiddenSessionsManager.hiddenIds()
+    }
+
+    /// Whether there are any sessions visible (not hidden) to display
+    var hasVisibleSessions: Bool {
+        sessions.contains { !hiddenSessionIds.contains($0.id) }
+    }
+
+    /// Sessions grouped by status, excluding hidden ones
     var liveSessions: [Session] {
-        sessions.filter { $0.status == .IN_PROGRESS }
+        sessions.filter { $0.status == .IN_PROGRESS && !hiddenSessionIds.contains($0.id) }
     }
 
     var upcomingSessions: [Session] {
-        sessions.filter { $0.status == .UPCOMING }
+        sessions.filter { $0.status == .UPCOMING && !hiddenSessionIds.contains($0.id) }
     }
 
     var completedSessions: [Session] {
-        sessions.filter { $0.status == .COMPLETED }
+        sessions.filter { $0.status == .COMPLETED && !hiddenSessionIds.contains($0.id) }
     }
 
     func loadSessions() async {
         isLoading = true
         errorMessage = nil
+
+        // Refresh the hidden IDs so any new hides are picked up
+        hiddenSessionIds = hiddenSessionsManager.hiddenIds()
 
         do {
             sessions = try await sessionService.fetchSessions()
@@ -61,8 +78,10 @@ class SessionsViewModel {
         }
     }
 
-    /// Remove a session from the local list (no API call)
+    /// Hide a session persistently (saves to UserDefaults, no API call)
     func deleteSession(_ session: Session) {
+        hiddenSessionsManager.hide(session.id)
+        hiddenSessionIds.insert(session.id)
         sessions.removeAll { $0.id == session.id }
     }
 
