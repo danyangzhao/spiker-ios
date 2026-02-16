@@ -169,7 +169,7 @@ class SessionDetailViewModel {
 
     func createGame() async {
         guard let scoreAInt = Int(scoreA), let scoreBInt = Int(scoreB) else {
-            errorMessage = "Scores must be numbers"
+            errorMessage = "Please enter valid numbers for the scores"
             return
         }
 
@@ -179,7 +179,7 @@ class SessionDetailViewModel {
         }
 
         guard !selectedTeamA.isEmpty && !selectedTeamB.isEmpty else {
-            errorMessage = "Both teams need players"
+            errorMessage = "Please select players for both teams"
             return
         }
 
@@ -292,11 +292,11 @@ class SessionDetailViewModel {
 
     func recordTournamentGame(matchId: String) async {
         guard let tournament else {
-            errorMessage = "No active tournament"
+            errorMessage = "There's no active tournament for this session"
             return
         }
         guard let scoreA = Int(tournamentScoreA), let scoreB = Int(tournamentScoreB) else {
-            errorMessage = "Scores must be numbers"
+            errorMessage = "Please enter valid numbers for the scores"
             return
         }
         guard scoreA != scoreB else {

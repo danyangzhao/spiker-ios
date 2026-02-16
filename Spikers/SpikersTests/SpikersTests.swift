@@ -338,4 +338,47 @@ struct SpikersTests {
 
         #expect(vm.activeTournamentMatch?.id == "m2")
     }
+
+    // MARK: - APIError User-Friendly Message Tests
+
+    @Test func apiErrorHttpErrorShowsOnlyMessage() async throws {
+        let error = APIError.httpError(statusCode: 400, message: "Need at least 4 attendees to start a tournament")
+        #expect(error.localizedDescription == "Need at least 4 attendees to start a tournament")
+    }
+
+    @Test func apiErrorHttpErrorDoesNotContainStatusCode() async throws {
+        let error = APIError.httpError(statusCode: 500, message: "Internal server error")
+        #expect(!error.localizedDescription.contains("500"))
+        #expect(!error.localizedDescription.contains("Server error"))
+    }
+
+    @Test func apiErrorNetworkErrorShowsFriendlyMessage() async throws {
+        let underlyingError = URLError(.notConnectedToInternet)
+        let error = APIError.networkError(underlyingError)
+        #expect(error.localizedDescription == "Couldn't connect to the server. Check your internet and try again.")
+    }
+
+    @Test func apiErrorDecodingErrorShowsFriendlyMessage() async throws {
+        let underlyingError = NSError(domain: "test", code: 0, userInfo: nil)
+        let error = APIError.decodingError(underlyingError)
+        #expect(error.localizedDescription == "Something went wrong loading the data. Try again in a moment.")
+    }
+
+    @Test func apiErrorInvalidURLShowsFriendlyMessage() async throws {
+        let error = APIError.invalidURL
+        #expect(error.localizedDescription == "Something went wrong. Please try again.")
+    }
+
+    @Test func apiErrorInvalidResponseShowsFriendlyMessage() async throws {
+        let error = APIError.invalidResponse
+        #expect(error.localizedDescription == "Received an unexpected response. Please try again.")
+    }
+
+    @Test func apiErrorNetworkErrorIsDetectedAsNetworkError() async throws {
+        let networkError = APIError.networkError(URLError(.timedOut))
+        #expect(networkError.isNetworkError == true)
+
+        let httpError = APIError.httpError(statusCode: 400, message: "Bad request")
+        #expect(httpError.isNetworkError == false)
+    }
 }

@@ -8,19 +8,26 @@ enum APIError: LocalizedError {
     case decodingError(Error)
     case networkError(Error)
 
+    /// User-friendly error description (hides technical details like status codes)
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return "Invalid URL"
+            return "Something went wrong. Please try again."
         case .invalidResponse:
-            return "Invalid response from server"
-        case .httpError(let code, let message):
-            return "Server error (\(code)): \(message)"
-        case .decodingError(let error):
-            return "Failed to parse response: \(error.localizedDescription)"
-        case .networkError(let error):
-            return "Network error: \(error.localizedDescription)"
+            return "Received an unexpected response. Please try again."
+        case .httpError(_, let message):
+            return message
+        case .decodingError:
+            return "Something went wrong loading the data. Try again in a moment."
+        case .networkError:
+            return "Couldn't connect to the server. Check your internet and try again."
         }
+    }
+
+    /// Whether this error is a network/connectivity issue
+    var isNetworkError: Bool {
+        if case .networkError = self { return true }
+        return false
     }
 }
 

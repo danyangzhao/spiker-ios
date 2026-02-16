@@ -36,7 +36,7 @@ class PlayersViewModel {
 
     func createPlayer() async -> Bool {
         guard !newPlayerName.trimmingCharacters(in: .whitespaces).isEmpty else {
-            errorMessage = "Player name is required"
+            errorMessage = "Please enter a name for the player"
             return false
         }
 

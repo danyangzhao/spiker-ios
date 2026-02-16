@@ -60,7 +60,7 @@ struct SessionDetailView: View {
         .task {
             await viewModel.loadData()
         }
-        .alert("Error", isPresented: .init(
+        .alert("Heads Up", isPresented: .init(
             get: { viewModel.errorMessage != nil && viewModel.sessionDetail != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
