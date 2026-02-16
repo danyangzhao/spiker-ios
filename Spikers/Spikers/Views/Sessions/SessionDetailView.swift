@@ -242,6 +242,7 @@ struct GamesTab: View {
             if let tournament = viewModel.tournament {
                 TournamentBracketView(
                     tournament: tournament,
+                    attendingPlayers: viewModel.attendingPlayers,
                     scoreA: $viewModel.tournamentScoreA,
                     scoreB: $viewModel.tournamentScoreB,
                     isSubmittingGame: viewModel.isSubmittingTournamentGame,

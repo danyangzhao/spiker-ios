@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TournamentBracketView: View {
     let tournament: TournamentState
+    let attendingPlayers: [Player]
     @Binding var scoreA: String
     @Binding var scoreB: String
     let isSubmittingGame: Bool
@@ -148,9 +149,7 @@ struct TournamentBracketView: View {
         if let team {
             return team.name
         }
-        let players = tournament.teams
-            .flatMap { [$0.playerA, $0.playerB].compactMap { $0 } }
-            .filter { playerIds.contains($0.id) }
+        let players = attendingPlayers.filter { playerIds.contains($0.id) }
         if players.isEmpty {
             return "TBD"
         }
