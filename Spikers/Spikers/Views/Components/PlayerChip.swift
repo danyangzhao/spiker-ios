@@ -15,6 +15,7 @@ struct PlayerChip: View {
                 .font(.caption)
                 .fontWeight(isWinner ? .bold : .regular)
                 .foregroundColor(AppTheme.foreground)
+                .lineLimit(1)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)

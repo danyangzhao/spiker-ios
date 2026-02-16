@@ -109,7 +109,8 @@ struct GameCard: View {
                         .fontWeight(.bold)
                         .foregroundColor(game.scoreB > game.scoreA ? AppTheme.win : AppTheme.foreground)
                 }
-                .padding(.horizontal, 8)
+                .frame(minWidth: 80)
+                .padding(.horizontal, 4)
 
                 // Team B
                 VStack(spacing: 4) {
