@@ -22,6 +22,7 @@ enum AppTheme {
     static let live = Color.green
     static let upcoming = Color.blue
     static let completed = Color.gray
+    static let tournamentBlue = Color(red: 126/255, green: 211/255, blue: 1.0)
 
     // Win/Loss colors
     static let win = Color.green

@@ -10,6 +10,7 @@ class SessionDetailViewModel {
     var rsvpResponse: RSVPResponse?
     var summary: SessionSummary?
     var allPlayers: [Player] = []
+    var tournament: TournamentState?
 
     var isLoading = false
     var errorMessage: String?
@@ -22,6 +23,18 @@ class SessionDetailViewModel {
     var scoreA = ""
     var scoreB = ""
     var isCreatingGame = false
+    var isSubmittingTournamentGame = false
+    var tournamentScoreA = ""
+    var tournamentScoreB = ""
+    var isSettingUpTournament = false
+    var isEndingTournament = false
+    var showTournamentSetup = false
+    var showTournamentBracket = false
+
+    // Edit Session form state
+    var showEditSheet = false
+    var editSessionDate = Date()
+    var isEditingSession = false
 
     private let sessionService = SessionService()
     private let gameService = GameService()
@@ -48,6 +61,7 @@ class SessionDetailViewModel {
             let (detail, players) = try await (detailTask, playersTask)
             sessionDetail = detail
             allPlayers = players
+            tournament = detail.tournament
 
             // Load RSVP data
             rsvpResponse = try await sessionService.fetchRSVPs(sessionId: sessionId)
@@ -87,6 +101,45 @@ class SessionDetailViewModel {
         isUpdatingStatus = false
     }
 
+    // MARK: - Edit Session
+
+    /// Prepares the edit sheet by parsing the current session date
+    func prepareEditSession() {
+        guard let detail = sessionDetail else { return }
+
+        // Parse the ISO date string back into a Date
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        if let date = formatter.date(from: detail.date) {
+            editSessionDate = date
+        } else {
+            // Try without fractional seconds
+            formatter.formatOptions = [.withInternetDateTime]
+            if let date = formatter.date(from: detail.date) {
+                editSessionDate = date
+            }
+        }
+
+        showEditSheet = true
+    }
+
+    /// Saves the edited session date
+    func saveEditedSession() async -> Bool {
+        isEditingSession = true
+        do {
+            let _ = try await sessionService.updateSession(id: sessionId, date: editSessionDate)
+            showEditSheet = false
+            await loadData()
+            isEditingSession = false
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            isEditingSession = false
+            return false
+        }
+    }
+
     // MARK: - RSVP
 
     func setRSVP(playerId: String, status: RSVPStatus) async {
@@ -100,12 +153,15 @@ class SessionDetailViewModel {
 
     // MARK: - Attendance
 
-    func setAttendance(playerIds: [String]) async {
+    @discardableResult
+    func setAttendance(playerIds: [String]) async -> Bool {
         do {
             let _ = try await sessionService.setAttendance(sessionId: sessionId, playerIds: playerIds)
             await loadData()
+            return true
         } catch {
             errorMessage = error.localizedDescription
+            return false
         }
     }
 
@@ -174,5 +230,96 @@ class SessionDetailViewModel {
         let shuffled = players.shuffled()
         selectedTeamA = Set(shuffled.prefix(2).map { $0.id })
         selectedTeamB = Set(shuffled.dropFirst(2).prefix(2).map { $0.id })
+    }
+
+    /// Generate fair teams by pairing highest and lowest ELO players
+    func generateFairTeams() {
+        let players = attendingPlayers.sorted { $0.rating > $1.rating }
+        guard players.count >= 4 else {
+            errorMessage = "Need at least 4 attending players to generate teams"
+            return
+        }
+
+        guard let strongest = players.first, let weakest = players.last else {
+            return
+        }
+        let middle = players.dropFirst().dropLast()
+        guard middle.count >= 2 else {
+            errorMessage = "Need at least 4 attending players to generate teams"
+            return
+        }
+
+        let secondStrongest = middle.first!
+        let secondWeakest = middle.last!
+
+        selectedTeamA = [strongest.id, weakest.id]
+        selectedTeamB = [secondStrongest.id, secondWeakest.id]
+    }
+
+    var canSetupTournament: Bool {
+        guard sessionDetail?.status == .IN_PROGRESS else { return false }
+        return tournament?.status != .ACTIVE
+    }
+
+    var activeTournamentMatch: TournamentMatch? {
+        guard let tournament else { return nil }
+        return tournament.matches.first { !$0.isComplete }
+    }
+
+    func setupTournament(mode: TournamentTeamMode) async {
+        isSettingUpTournament = true
+        errorMessage = nil
+        do {
+            tournament = try await sessionService.setupTournament(sessionId: sessionId, mode: mode)
+            showTournamentSetup = false
+            showTournamentBracket = true
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isSettingUpTournament = false
+    }
+
+    func endTournament() async {
+        isEndingTournament = true
+        errorMessage = nil
+        do {
+            tournament = try await sessionService.endTournament(sessionId: sessionId)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isEndingTournament = false
+    }
+
+    func recordTournamentGame(matchId: String) async {
+        guard let tournament else {
+            errorMessage = "No active tournament"
+            return
+        }
+        guard let scoreA = Int(tournamentScoreA), let scoreB = Int(tournamentScoreB) else {
+            errorMessage = "Scores must be numbers"
+            return
+        }
+        guard scoreA != scoreB else {
+            errorMessage = "Games cannot end in a tie"
+            return
+        }
+
+        isSubmittingTournamentGame = true
+        errorMessage = nil
+        do {
+            self.tournament = try await sessionService.recordTournamentGame(
+                sessionId: sessionId,
+                tournamentId: tournament.id,
+                matchId: matchId,
+                scoreA: scoreA,
+                scoreB: scoreB
+            )
+            tournamentScoreA = ""
+            tournamentScoreB = ""
+            await loadData()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isSubmittingTournamentGame = false
     }
 }

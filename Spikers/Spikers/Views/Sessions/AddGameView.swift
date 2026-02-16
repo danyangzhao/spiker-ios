@@ -28,6 +28,21 @@ struct AddGameView: View {
                             .cornerRadius(10)
                         }
 
+                        Button {
+                            viewModel.generateFairTeams()
+                        } label: {
+                            HStack {
+                                Image(systemName: "equal.square")
+                                Text("Fair Teams (ELO)")
+                            }
+                            .fontWeight(.medium)
+                            .foregroundColor(AppTheme.tournamentBlue)
+                            .frame(maxWidth: .infinity)
+                            .padding(10)
+                            .background(AppTheme.tournamentBlue.opacity(0.15))
+                            .cornerRadius(10)
+                        }
+
                         // Team A
                         TeamSelector(
                             title: "Team A",

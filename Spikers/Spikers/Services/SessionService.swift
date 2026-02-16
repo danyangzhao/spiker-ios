@@ -28,8 +28,13 @@ struct SessionService {
     }
 
     /// PATCH /api/sessions/[id] - Update a session
-    func updateSession(id: String, status: SessionStatus? = nil, location: String? = nil) async throws -> Session {
+    func updateSession(id: String, date: Date? = nil, status: SessionStatus? = nil, location: String? = nil) async throws -> Session {
         var body: [String: Any] = [:]
+        if let date {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime]
+            body["date"] = formatter.string(from: date)
+        }
         if let status { body["status"] = status.rawValue }
         if let location { body["location"] = location }
         return try await client.patch("/api/sessions/\(id)", body: body)
@@ -91,5 +96,42 @@ struct SessionService {
     /// GET /api/sessions/[id]/summary - Get session summary with awards
     func fetchSummary(sessionId: String) async throws -> SessionSummary {
         try await client.get("/api/sessions/\(sessionId)/summary")
+    }
+
+    // MARK: - Tournament
+
+    /// GET /api/sessions/[id]/tournament - Get tournament state for a session
+    func fetchTournament(sessionId: String) async throws -> TournamentState? {
+        try await client.get("/api/sessions/\(sessionId)/tournament")
+    }
+
+    /// POST /api/sessions/[id]/tournament - Create a tournament from attendees
+    func setupTournament(sessionId: String, mode: TournamentTeamMode) async throws -> TournamentState {
+        try await client.post("/api/sessions/\(sessionId)/tournament", body: [
+            "mode": mode.rawValue
+        ])
+    }
+
+    /// PATCH /api/sessions/[id]/tournament - End active tournament
+    func endTournament(sessionId: String) async throws -> TournamentState {
+        try await client.patch("/api/sessions/\(sessionId)/tournament", body: [
+            "action": "END"
+        ])
+    }
+
+    /// POST /api/sessions/[id]/tournament/games - Record one game in a tournament series
+    func recordTournamentGame(
+        sessionId: String,
+        tournamentId: String,
+        matchId: String,
+        scoreA: Int,
+        scoreB: Int
+    ) async throws -> TournamentState {
+        try await client.post("/api/sessions/\(sessionId)/tournament/games", body: [
+            "tournamentId": tournamentId,
+            "matchId": matchId,
+            "scoreA": scoreA,
+            "scoreB": scoreB
+        ])
     }
 }

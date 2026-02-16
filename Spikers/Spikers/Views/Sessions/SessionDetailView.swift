@@ -80,9 +80,19 @@ struct SessionHeader: View {
         VStack(spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(formatDate(detail.date))
-                        .font(.headline)
-                        .foregroundColor(AppTheme.foreground)
+                    HStack(spacing: 6) {
+                        Text(formatDate(detail.date))
+                            .font(.headline)
+                            .foregroundColor(AppTheme.foreground)
+
+                        Button {
+                            viewModel.prepareEditSession()
+                        } label: {
+                            Image(systemName: "pencil.circle.fill")
+                                .font(.subheadline)
+                                .foregroundColor(AppTheme.secondaryText)
+                        }
+                    }
 
                     if let location = detail.location {
                         HStack(spacing: 4) {
@@ -135,6 +145,9 @@ struct SessionHeader: View {
         }
         .padding()
         .background(AppTheme.card)
+        .sheet(isPresented: $viewModel.showEditSheet) {
+            EditSessionView(viewModel: viewModel)
+        }
     }
 }
 
@@ -165,6 +178,10 @@ struct GamesTab: View {
 
     var body: some View {
         VStack(spacing: 12) {
+            if viewModel.sessionDetail?.status == .IN_PROGRESS {
+                tournamentControls
+            }
+
             if viewModel.sessionDetail?.status == .IN_PROGRESS {
                 // Add Game button
                 Button {
@@ -209,6 +226,104 @@ struct GamesTab: View {
         .padding()
         .sheet(isPresented: $viewModel.showAddGame) {
             AddGameView(viewModel: viewModel)
+        }
+        .confirmationDialog("Tournament Setup", isPresented: $viewModel.showTournamentSetup) {
+            Button("Random Teams") {
+                Task { await viewModel.setupTournament(mode: .RANDOM) }
+            }
+            Button("Fair Teams (ELO)") {
+                Task { await viewModel.setupTournament(mode: .FAIR) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Use the current attendees to create a tournament.")
+        }
+        .sheet(isPresented: $viewModel.showTournamentBracket) {
+            if let tournament = viewModel.tournament {
+                TournamentBracketView(
+                    tournament: tournament,
+                    scoreA: $viewModel.tournamentScoreA,
+                    scoreB: $viewModel.tournamentScoreB,
+                    isSubmittingGame: viewModel.isSubmittingTournamentGame,
+                    activeMatch: viewModel.activeTournamentMatch,
+                    onSubmitGame: { matchId in
+                        Task { await viewModel.recordTournamentGame(matchId: matchId) }
+                    },
+                    onEndTournament: {
+                        Task { await viewModel.endTournament() }
+                    },
+                    isEndingTournament: viewModel.isEndingTournament
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var tournamentControls: some View {
+        VStack(spacing: 8) {
+            if viewModel.canSetupTournament {
+                Button {
+                    viewModel.showTournamentSetup = true
+                } label: {
+                    HStack {
+                        Image(systemName: "trophy")
+                        Text("Tournament Mode")
+                    }
+                    .fontWeight(.semibold)
+                    .foregroundColor(AppTheme.tournamentBlue)
+                    .frame(maxWidth: .infinity)
+                    .padding(12)
+                    .background(AppTheme.tournamentBlue.opacity(0.06))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(AppTheme.tournamentBlue.opacity(0.65), lineWidth: 1)
+                    )
+                    .cornerRadius(12)
+                }
+            } else if let tournament = viewModel.tournament {
+                VStack(spacing: 8) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Tournament Active")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(AppTheme.tournamentBlue)
+                            Text("Stage: \(readableStage(tournament.stage))")
+                                .font(.caption)
+                                .foregroundColor(AppTheme.secondaryText)
+                        }
+                        Spacer()
+                        Button("View Bracket") {
+                            viewModel.showTournamentBracket = true
+                        }
+                        .font(.caption)
+                        .foregroundColor(AppTheme.tournamentBlue)
+                    }
+
+                    if tournament.status == .ACTIVE {
+                        Button(role: .destructive) {
+                            Task { await viewModel.endTournament() }
+                        } label: {
+                            Text(viewModel.isEndingTournament ? "Ending Tournament..." : "End Tournament")
+                                .font(.caption)
+                        }
+                        .disabled(viewModel.isEndingTournament)
+                    }
+                }
+                .padding(12)
+                .background(AppTheme.card02)
+                .cornerRadius(12)
+            }
+        }
+    }
+
+    private func readableStage(_ stage: TournamentStage) -> String {
+        switch stage {
+        case .ROUND_ROBIN: return "Round Robin"
+        case .BRACKET: return "Bracket"
+        case .FINALS: return "Finals"
+        case .COMPLETED: return "Completed"
+        case .ENDED: return "Ended"
         }
     }
 }

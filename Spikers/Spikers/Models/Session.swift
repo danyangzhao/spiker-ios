@@ -34,6 +34,7 @@ struct SessionDetail: Codable, Identifiable {
     let attendances: [Attendance]
     let rsvps: [RSVPEntry]
     let games: [Game]
+    let tournament: TournamentState?
 }
 
 // MARK: - Attendance
@@ -131,4 +132,90 @@ struct SessionPlayerStat: Codable, Identifiable {
     let wins: Int
     let losses: Int
     let pointDiff: Int
+}
+
+// MARK: - Tournament
+enum TournamentStatus: String, Codable {
+    case ACTIVE
+    case COMPLETED
+    case ENDED
+}
+
+enum TournamentTeamMode: String, Codable {
+    case RANDOM
+    case FAIR
+}
+
+enum TournamentStage: String, Codable {
+    case ROUND_ROBIN
+    case BRACKET
+    case FINALS
+    case COMPLETED
+    case ENDED
+}
+
+enum TournamentMatchStage: String, Codable {
+    case ROUND_ROBIN
+    case BRACKET
+    case WINNERS_FINAL
+    case LOSERS_FINAL
+}
+
+struct TournamentState: Codable, Identifiable {
+    let id: String
+    let sessionId: String
+    let status: TournamentStatus
+    let teamMode: TournamentTeamMode
+    let stage: TournamentStage
+    let createdAt: String
+    let updatedAt: String
+    let endedAt: String?
+    let winnerTeamId: String?
+    let teams: [TournamentTeam]
+    let matches: [TournamentMatch]
+}
+
+struct TournamentTeam: Codable, Identifiable, Hashable {
+    let id: String
+    let tournamentId: String
+    let name: String
+    let seed: Int
+    let wins: Int
+    let losses: Int
+    let isEliminated: Bool
+    let playerAId: String
+    let playerBId: String?
+    let playerA: Player
+    let playerB: Player?
+}
+
+struct TournamentMatch: Codable, Identifiable {
+    let id: String
+    let tournamentId: String
+    let stage: TournamentMatchStage
+    let round: Int
+    let slot: Int
+    let bestOf: Int
+    let winsA: Int
+    let winsB: Int
+    let isComplete: Bool
+    let teamAId: String?
+    let teamBId: String?
+    let winnerTeamId: String?
+    let loserTeamId: String?
+    let teamAPlayerIds: [String]
+    let teamBPlayerIds: [String]
+    let teamA: TournamentTeam?
+    let teamB: TournamentTeam?
+    let winnerTeam: TournamentTeam?
+    let loserTeam: TournamentTeam?
+    let games: [TournamentMatchGame]
+}
+
+struct TournamentMatchGame: Codable, Identifiable {
+    let id: String
+    let tournamentMatchId: String
+    let gameId: String
+    let gameNumber: Int
+    let game: Game?
 }
