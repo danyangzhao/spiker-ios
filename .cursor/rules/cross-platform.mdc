@@ -1,0 +1,38 @@
+---
+description: Cross-platform awareness — this iOS app has a companion web app that shares the same backend
+alwaysApply: true
+---
+
+# Spikers Cross-Platform Context
+
+This iOS app (SwiftUI) is one of **two frontends** for the Spikers platform. Always consider both when developing features.
+
+## Companion Web App
+
+- **Location:** `~/Projects/spikers`
+- **Stack:** Next.js 16, React 19, TypeScript, Tailwind CSS
+- **Backend:** The web project owns the backend — API routes (`app/api/`) and database (Prisma + PostgreSQL)
+- **Shared API:** Both apps use `https://spikers-production.up.railway.app`
+
+## Codebase Mapping
+
+| iOS (this project)            | Web (`~/Projects/spikers`)       |
+|-------------------------------|----------------------------------|
+| `Spikers/Models/` (Swift)     | `prisma/schema.prisma` (Prisma)  |
+| `Spikers/Services/` (API calls) | `app/api/` (API routes)        |
+| `Spikers/ViewModels/`         | React hooks / page components    |
+| `Spikers/Views/`              | `app/` pages (Next.js App Router)|
+
+## When Building a New Feature
+
+1. **Check if a new API endpoint is needed** — if so, it must be added in the web project first (`app/api/`)
+2. **Check if the Prisma schema needs updating** — new models or fields go in `prisma/schema.prisma`
+3. **Add the iOS model** — create or update a Swift struct in `Spikers/Models/` matching the API response
+4. **Add the iOS service** — create or update a service in `Spikers/Services/` to call the endpoint
+5. **Build the iOS UI** — add views and view models
+6. **Remind the user** to also build the corresponding web UI in the companion project if applicable
+
+## When Modifying an Existing Feature
+
+- If you change an API contract (request/response shape), flag that the web project's API route and the iOS model/service both need updating.
+- If you add a new Swift model field, check that it exists in the Prisma schema and API response.

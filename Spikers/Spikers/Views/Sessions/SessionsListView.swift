@@ -26,17 +26,17 @@ struct SessionsListView: View {
                         VStack(spacing: 20) {
                             // Live Sessions
                             if !viewModel.liveSessions.isEmpty {
-                                SessionGroup(title: "Live", sessions: viewModel.liveSessions)
+                                SessionGroup(title: "Live", sessions: viewModel.liveSessions, viewModel: viewModel)
                             }
 
                             // Upcoming Sessions
                             if !viewModel.upcomingSessions.isEmpty {
-                                SessionGroup(title: "Upcoming", sessions: viewModel.upcomingSessions)
+                                SessionGroup(title: "Upcoming", sessions: viewModel.upcomingSessions, viewModel: viewModel)
                             }
 
                             // Completed Sessions
                             if !viewModel.completedSessions.isEmpty {
-                                SessionGroup(title: "Completed", sessions: viewModel.completedSessions)
+                                SessionGroup(title: "Completed", sessions: viewModel.completedSessions, viewModel: viewModel)
                             }
                         }
                         .padding()
@@ -61,6 +61,16 @@ struct SessionsListView: View {
             .sheet(isPresented: $viewModel.showCreateSheet) {
                 CreateSessionView(viewModel: viewModel)
             }
+            .alert("Delete Session?", isPresented: $viewModel.showDeleteConfirmation) {
+                Button("Cancel", role: .cancel) {
+                    viewModel.sessionToDelete = nil
+                }
+                Button("Delete", role: .destructive) {
+                    viewModel.confirmDeleteSession()
+                }
+            } message: {
+                Text("This session has games that have been played. Are you sure you want to delete it?")
+            }
             .task {
                 await viewModel.loadSessions()
             }
@@ -72,6 +82,7 @@ struct SessionsListView: View {
 struct SessionGroup: View {
     let title: String
     let sessions: [Session]
+    var viewModel: SessionsViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -83,6 +94,13 @@ struct SessionGroup: View {
                 ForEach(sessions) { session in
                     NavigationLink(destination: SessionDetailView(sessionId: session.id)) {
                         SessionRowCard(session: session)
+                    }
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            viewModel.requestDeleteSession(session)
+                        } label: {
+                            Label("Delete Session", systemImage: "trash")
+                        }
                     }
                 }
             }

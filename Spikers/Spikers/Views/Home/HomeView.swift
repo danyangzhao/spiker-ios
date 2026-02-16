@@ -258,7 +258,7 @@ func formatDate(_ dateString: String) -> String {
 
     let displayFormatter = DateFormatter()
     displayFormatter.dateFormat = "EEE, MMM d 'at' h:mm a"
-    displayFormatter.timeZone = TimeZone(identifier: "UTC")
+    displayFormatter.timeZone = .current
     return displayFormatter.string(from: date)
 }
 
@@ -276,6 +276,6 @@ func formatDateShort(_ dateString: String) -> String {
 
     let displayFormatter = DateFormatter()
     displayFormatter.dateFormat = "MMM d, yyyy"
-    displayFormatter.timeZone = TimeZone(identifier: "UTC")
+    displayFormatter.timeZone = .current
     return displayFormatter.string(from: date)
 }
