@@ -86,7 +86,8 @@ struct GameCard: View {
                             PlayerChip(
                                 emoji: player.emoji,
                                 name: player.name,
-                                isWinner: game.scoreA > game.scoreB
+                                isWinner: game.scoreA > game.scoreB,
+                                compact: true
                             )
                         }
                     }
@@ -119,7 +120,8 @@ struct GameCard: View {
                             PlayerChip(
                                 emoji: player.emoji,
                                 name: player.name,
-                                isWinner: game.scoreB > game.scoreA
+                                isWinner: game.scoreB > game.scoreA,
+                                compact: true
                             )
                         }
                     }

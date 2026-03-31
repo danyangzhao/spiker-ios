@@ -493,10 +493,12 @@ struct SummaryTab: View {
                                 Text("\(stat.wins)W-\(stat.losses)L")
                                     .font(.caption)
                                     .foregroundColor(AppTheme.secondaryText)
-                                Text(stat.pointDiff >= 0 ? "+\(stat.pointDiff)" : "\(stat.pointDiff)")
-                                    .font(.caption)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(stat.pointDiff >= 0 ? AppTheme.win : AppTheme.loss)
+                                if let change = stat.ratingChange {
+                                    Text(change >= 0 ? "+\(change)" : "\(change)")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(change >= 0 ? AppTheme.win : AppTheme.loss)
+                                }
                             }
                             .padding(.vertical, 4)
                         }

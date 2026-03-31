@@ -132,6 +132,7 @@ struct SessionPlayerStat: Codable, Identifiable {
     let wins: Int
     let losses: Int
     let pointDiff: Int
+    let ratingChange: Int?
 }
 
 // MARK: - Tournament

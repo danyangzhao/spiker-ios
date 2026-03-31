@@ -6,18 +6,24 @@ struct PlayerChip: View {
     let emoji: String
     let name: String
     var isWinner: Bool = false
+    var compact: Bool = false
+
+    private var displayName: String {
+        compact ? String(name.prefix(3)) : name
+    }
 
     var body: some View {
         HStack(spacing: 4) {
             Text(emoji)
                 .font(.caption)
-            Text(name)
-                .font(.caption)
+            Text(displayName)
+                .font(compact ? .caption2 : .caption)
                 .fontWeight(isWinner ? .bold : .regular)
                 .foregroundColor(AppTheme.foreground)
                 .lineLimit(1)
+                .fixedSize()
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, compact ? 6 : 8)
         .padding(.vertical, 4)
         .background(AppTheme.card02)
         .cornerRadius(12)

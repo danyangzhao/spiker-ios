@@ -19,8 +19,7 @@ struct DeepLinkJoinSheet: View {
                 VStack(spacing: 24) {
                     Spacer()
 
-                    Text("🏐")
-                        .font(.system(size: 56))
+                    SpikeballIcon(size: 64)
 
                     Text("Join Group")
                         .font(.title2)

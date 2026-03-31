@@ -31,6 +31,52 @@ struct OnboardingView: View {
     }
 }
 
+// MARK: - Spikeball Icon
+struct SpikeballIcon: View {
+    let size: CGFloat
+
+    private var ballYellow: Color { Color(red: 1.0, green: 0.82, blue: 0.05) }
+    private var ballYellowDark: Color { Color(red: 0.85, green: 0.65, blue: 0.0) }
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [ballYellow, ballYellowDark],
+                        center: UnitPoint(x: 0.35, y: 0.3),
+                        startRadius: size * 0.05,
+                        endRadius: size * 0.65
+                    )
+                )
+                .frame(width: size, height: size)
+
+            Circle()
+                .stroke(ballYellowDark, lineWidth: size * 0.03)
+                .frame(width: size, height: size)
+
+            ForEach([0.0, 60.0, 120.0], id: \.self) { angle in
+                Ellipse()
+                    .stroke(ballYellowDark.opacity(0.5), lineWidth: size * 0.025)
+                    .frame(width: size * 0.88, height: size * 0.35)
+                    .rotationEffect(.degrees(angle))
+            }
+
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color.white.opacity(0.45), Color.clear],
+                        center: UnitPoint(x: 0.3, y: 0.25),
+                        startRadius: 0,
+                        endRadius: size * 0.4
+                    )
+                )
+                .frame(width: size * 0.85, height: size * 0.85)
+        }
+        .shadow(color: ballYellowDark.opacity(0.4), radius: 12, y: 6)
+    }
+}
+
 // MARK: - Welcome Screen
 struct WelcomeScreen: View {
     let onCreateTapped: () -> Void
@@ -41,15 +87,15 @@ struct WelcomeScreen: View {
             Spacer()
 
             VStack(spacing: 12) {
-                Text("🏐")
-                    .font(.system(size: 72))
+                SpikeballIcon(size: 88)
+                    .padding(.bottom, 4)
 
-                Text("Spikers")
+                Text("Local Spikers")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .foregroundColor(AppTheme.foreground)
 
-                Text("Track your volleyball games\nwith your crew")
+                Text("Track every round net session\nwith your crew")
                     .font(.body)
                     .foregroundColor(AppTheme.secondaryText)
                     .multilineTextAlignment(.center)
