@@ -45,6 +45,14 @@ struct HomeView: View {
             }
             .navigationTitle("Spikers")
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink(destination: SettingsView()) {
+                        Image(systemName: "gearshape")
+                            .foregroundColor(AppTheme.secondaryText)
+                    }
+                }
+            }
             .task {
                 await viewModel.loadData()
             }

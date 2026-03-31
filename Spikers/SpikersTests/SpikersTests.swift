@@ -444,6 +444,95 @@ struct SpikersTests {
         #expect(vm.activeTournamentMatch?.id == "m2")
     }
 
+    // MARK: - GroupManager Tests
+
+    private func makeTestGroupManager() -> GroupManager {
+        let suiteName = "com.spikers.tests.groups.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        return GroupManager(defaults: defaults)
+    }
+
+    @Test func groupManagerStartsWithNoGroup() async throws {
+        let manager = makeTestGroupManager()
+        #expect(manager.currentGroupId == nil)
+        #expect(manager.currentGroupName == nil)
+        #expect(manager.hasGroup == false)
+        #expect(manager.previousGroups.isEmpty)
+    }
+
+    @Test func groupManagerSetGroupStoresIdAndName() async throws {
+        let manager = makeTestGroupManager()
+        let group = Group(id: "test-group-1", name: "FRIENDZ", createdAt: "2026-03-30T00:00:00.000Z")
+
+        manager.setGroup(group)
+
+        #expect(manager.currentGroupId == "test-group-1")
+        #expect(manager.currentGroupName == "FRIENDZ")
+        #expect(manager.hasGroup == true)
+    }
+
+    @Test func groupManagerSetGroupAddsToPreviousGroups() async throws {
+        let manager = makeTestGroupManager()
+        let group1 = Group(id: "g1", name: "FRIENDZ", createdAt: "2026-03-30T00:00:00.000Z")
+        let group2 = Group(id: "g2", name: "BEACH BUMZ", createdAt: "2026-03-30T00:00:00.000Z")
+
+        manager.setGroup(group1)
+        manager.setGroup(group2)
+
+        #expect(manager.previousGroups.count == 2)
+        #expect(manager.currentGroupId == "g2")
+        #expect(manager.currentGroupName == "BEACH BUMZ")
+    }
+
+    @Test func groupManagerSetGroupDoesNotDuplicatePreviousGroups() async throws {
+        let manager = makeTestGroupManager()
+        let group = Group(id: "g1", name: "FRIENDZ", createdAt: "2026-03-30T00:00:00.000Z")
+
+        manager.setGroup(group)
+        manager.setGroup(group)
+
+        #expect(manager.previousGroups.count == 1)
+    }
+
+    @Test func groupManagerSwitchToGroup() async throws {
+        let manager = makeTestGroupManager()
+        let group1 = Group(id: "g1", name: "FRIENDZ", createdAt: "2026-03-30T00:00:00.000Z")
+        let group2 = Group(id: "g2", name: "SPIKE CITY", createdAt: "2026-03-30T00:00:00.000Z")
+
+        manager.setGroup(group1)
+        manager.setGroup(group2)
+        manager.switchToGroup(id: "g1", name: "FRIENDZ")
+
+        #expect(manager.currentGroupId == "g1")
+        #expect(manager.currentGroupName == "FRIENDZ")
+    }
+
+    @Test func groupManagerClearGroup() async throws {
+        let manager = makeTestGroupManager()
+        let group = Group(id: "g1", name: "FRIENDZ", createdAt: "2026-03-30T00:00:00.000Z")
+
+        manager.setGroup(group)
+        manager.clearGroup()
+
+        #expect(manager.currentGroupId == nil)
+        #expect(manager.currentGroupName == nil)
+        #expect(manager.hasGroup == false)
+    }
+
+    @Test func groupManagerPersistsAcrossInstances() async throws {
+        let suiteName = "com.spikers.tests.groups.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+
+        let manager1 = GroupManager(defaults: defaults)
+        let group = Group(id: "g1", name: "FRIENDZ", createdAt: "2026-03-30T00:00:00.000Z")
+        manager1.setGroup(group)
+
+        let manager2 = GroupManager(defaults: defaults)
+        #expect(manager2.currentGroupId == "g1")
+        #expect(manager2.currentGroupName == "FRIENDZ")
+        #expect(manager2.previousGroups.count == 1)
+    }
+
     // MARK: - APIError User-Friendly Message Tests
 
     @Test func apiErrorHttpErrorShowsOnlyMessage() async throws {

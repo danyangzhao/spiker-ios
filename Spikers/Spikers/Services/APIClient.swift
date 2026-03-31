@@ -61,6 +61,7 @@ final class APIClient: Sendable {
         let url = try buildURL(path: path, queryItems: queryItems)
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        applyGroupHeader(&request)
         return try await perform(request)
     }
 
@@ -71,6 +72,7 @@ final class APIClient: Sendable {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        applyGroupHeader(&request)
         return try await perform(request)
     }
 
@@ -81,6 +83,7 @@ final class APIClient: Sendable {
         request.httpMethod = "PATCH"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        applyGroupHeader(&request)
         return try await perform(request)
     }
 
@@ -89,6 +92,7 @@ final class APIClient: Sendable {
         let url = try buildURL(path: path)
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
+        applyGroupHeader(&request)
         return try await perform(request)
     }
 
@@ -97,10 +101,19 @@ final class APIClient: Sendable {
         let url = try buildURL(path: path)
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
+        applyGroupHeader(&request)
         let _: [String: Bool] = try await perform(request)
     }
 
     // MARK: - Private helpers
+
+    /// Attaches the current group ID as an HTTP header so the backend
+    /// knows which group this request is scoped to.
+    private func applyGroupHeader(_ request: inout URLRequest) {
+        if let groupId = GroupManager.shared.currentGroupId {
+            request.setValue(groupId, forHTTPHeaderField: "X-Group-Id")
+        }
+    }
 
     private func buildURL(path: String, queryItems: [URLQueryItem]? = nil) throws -> URL {
         guard var components = URLComponents(string: baseURL + path) else {

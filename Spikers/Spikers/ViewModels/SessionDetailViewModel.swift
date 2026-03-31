@@ -57,16 +57,14 @@ class SessionDetailViewModel {
         do {
             async let detailTask = sessionService.fetchSessionDetail(id: sessionId)
             async let playersTask = playerService.fetchPlayers()
+            async let rsvpTask = sessionService.fetchRSVPs(sessionId: sessionId)
 
-            let (detail, players) = try await (detailTask, playersTask)
+            let (detail, players, rsvps) = try await (detailTask, playersTask, rsvpTask)
             sessionDetail = detail
             allPlayers = players
+            rsvpResponse = rsvps
             tournament = detail.tournament
 
-            // Load RSVP data
-            rsvpResponse = try await sessionService.fetchRSVPs(sessionId: sessionId)
-
-            // Load summary if completed or in progress
             if detail.status == .COMPLETED || detail.status == .IN_PROGRESS {
                 summary = try? await sessionService.fetchSummary(sessionId: sessionId)
             }
@@ -75,6 +73,22 @@ class SessionDetailViewModel {
         }
 
         isLoading = false
+    }
+
+    /// Lightweight refresh that only re-fetches the session detail.
+    /// Use after game creation/deletion where players and RSVPs haven't changed.
+    private func refreshSessionDetail() async {
+        do {
+            let detail = try await sessionService.fetchSessionDetail(id: sessionId)
+            sessionDetail = detail
+            tournament = detail.tournament
+
+            if detail.status == .COMPLETED || detail.status == .IN_PROGRESS {
+                summary = try? await sessionService.fetchSummary(sessionId: sessionId)
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     // MARK: - Status Management
@@ -186,13 +200,15 @@ class SessionDetailViewModel {
         isCreatingGame = true
 
         do {
-            let _ = try await sessionService.createGame(
+            let newGame = try await sessionService.createGame(
                 sessionId: sessionId,
                 teamAPlayerIds: Array(selectedTeamA),
                 teamBPlayerIds: Array(selectedTeamB),
                 scoreA: scoreAInt,
                 scoreB: scoreBInt
             )
+
+            sessionDetail?.games.append(newGame)
 
             // Reset form
             selectedTeamA = []
@@ -201,8 +217,7 @@ class SessionDetailViewModel {
             scoreB = ""
             showAddGame = false
 
-            // Reload
-            await loadData()
+            await refreshSessionDetail()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -213,7 +228,7 @@ class SessionDetailViewModel {
     func deleteGame(id: String) async {
         do {
             try await gameService.deleteGame(id: id)
-            await loadData()
+            await refreshSessionDetail()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -316,7 +331,7 @@ class SessionDetailViewModel {
             )
             tournamentScoreA = ""
             tournamentScoreB = ""
-            await loadData()
+            await refreshSessionDetail()
         } catch {
             errorMessage = error.localizedDescription
         }

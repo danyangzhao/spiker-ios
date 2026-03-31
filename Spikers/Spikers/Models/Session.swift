@@ -33,7 +33,7 @@ struct SessionDetail: Codable, Identifiable {
     let status: SessionStatus
     let attendances: [Attendance]
     let rsvps: [RSVPEntry]
-    let games: [Game]
+    var games: [Game]
     let tournament: TournamentState?
 }
 
