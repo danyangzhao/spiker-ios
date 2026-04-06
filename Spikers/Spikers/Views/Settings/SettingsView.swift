@@ -89,6 +89,24 @@ struct SettingsView: View {
                         }
                         .listRowBackground(AppTheme.card)
                     }
+
+                    // About
+                    Section {
+                        Link(destination: URL(string: "https://spikers-production.up.railway.app/privacy")!) {
+                            Label("Privacy Policy", systemImage: "hand.raised")
+                                .foregroundColor(AppTheme.foreground)
+                        }
+                        .listRowBackground(AppTheme.card)
+
+                        HStack {
+                            Text("Version")
+                                .foregroundColor(AppTheme.secondaryText)
+                            Spacer()
+                            Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+                                .foregroundColor(AppTheme.secondaryText)
+                        }
+                        .listRowBackground(AppTheme.card)
+                    }
                 }
                 .scrollContentBackground(.hidden)
             }

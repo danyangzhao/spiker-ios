@@ -37,13 +37,21 @@ final class GroupManager {
         self.previousGroups = (defaults.array(forKey: Self.previousGroupsKey) as? [[String: String]]) ?? []
     }
 
-    /// Save a group as the current group and add it to the history
+    /// Save a group as the current group and add it to the history.
+    /// On first group join, prompts for push notification permission.
     func setGroup(_ group: Group) {
+        let isFirstGroup = previousGroups.isEmpty
         currentGroupId = group.id
         currentGroupName = group.name
 
         if !previousGroups.contains(where: { $0["id"] == group.id }) {
             previousGroups.append(["id": group.id, "name": group.name])
+        }
+
+        if isFirstGroup {
+            Task {
+                await NotificationManager.shared.requestPermission()
+            }
         }
     }
 

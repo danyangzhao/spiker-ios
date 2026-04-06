@@ -21,6 +21,11 @@ struct ContentView: View {
                 }
             }
             .tint(AppTheme.accent)
+            .task {
+                if !NotificationManager.shared.isPermissionGranted {
+                    await NotificationManager.shared.requestPermission()
+                }
+            }
         } else {
             OnboardingView()
         }

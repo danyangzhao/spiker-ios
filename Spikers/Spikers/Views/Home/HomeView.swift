@@ -51,6 +51,7 @@ struct HomeView: View {
                         Image(systemName: "gearshape")
                             .foregroundColor(AppTheme.secondaryText)
                     }
+                    .accessibilityLabel("Settings")
                 }
             }
             .task {
@@ -98,6 +99,8 @@ struct LiveSessionBanner: View {
             )
             .cornerRadius(16)
         }
+        .accessibilityLabel("Live session\(session.location.map { " at \($0)" } ?? "")")
+        .accessibilityHint("Double tap to view session details")
     }
 }
 
@@ -188,6 +191,7 @@ struct LeaderboardSection: View {
                             .padding(.vertical, 10)
                             .padding(.horizontal, 12)
                         }
+                        .accessibilityLabel("Rank \(index + 1), \(player.name), rating \(player.rating)")
 
                         if index < players.count - 1 {
                             Divider()

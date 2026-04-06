@@ -46,12 +46,10 @@ final class APIClient: Sendable {
     let baseURL: String
 
     private let session: URLSession
-    private let decoder: JSONDecoder
 
     init(baseURL: String = "https://spikers-production.up.railway.app") {
         self.baseURL = baseURL
         self.session = URLSession.shared
-        self.decoder = JSONDecoder()
     }
 
     // MARK: - Core request methods
