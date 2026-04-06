@@ -85,6 +85,17 @@ final class APIClient: Sendable {
         return try await perform(request)
     }
 
+    /// Perform a PUT request with a JSON body and decode the response
+    func put<T: Decodable>(_ path: String, body: [String: Any]) async throws -> T {
+        let url = try buildURL(path: path)
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        applyGroupHeader(&request)
+        return try await perform(request)
+    }
+
     /// Perform a DELETE request and decode the response
     func delete<T: Decodable>(_ path: String) async throws -> T {
         let url = try buildURL(path: path)
