@@ -143,6 +143,9 @@ struct BadgeCard: View {
         .padding(12)
         .background(AppTheme.card02)
         .cornerRadius(12)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Badge: \(badge.name). \(badge.description)")
+        .accessibilityHint("Double tap for details")
     }
 }
 
@@ -199,6 +202,9 @@ struct LockedBadgeCard: View {
         .background(AppTheme.card02)
         .cornerRadius(12)
         .opacity(0.6)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Locked badge: \(badge.name). \(badge.description)")
+        .accessibilityHint("Double tap for details")
     }
 }
 
@@ -289,6 +295,7 @@ struct BadgeDetailSheet: View {
                             .foregroundColor(AppTheme.secondaryText)
                             .font(.title3)
                     }
+                    .accessibilityLabel("Close")
                 }
             }
         }

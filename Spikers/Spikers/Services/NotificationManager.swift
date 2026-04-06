@@ -101,7 +101,9 @@ class NotificationManager: NSObject {
             self.deviceToken = tokenString
         }
 
+        #if DEBUG
         print("📱 Device token: \(tokenString)")
+        #endif
 
         // Send the token to our backend so it can send us push notifications
         Task {
@@ -114,7 +116,9 @@ class NotificationManager: NSObject {
         Task { @MainActor in
             self.errorMessage = "Push notification registration failed: \(error.localizedDescription)"
         }
+        #if DEBUG
         print("❌ Push registration error: \(error.localizedDescription)")
+        #endif
     }
 
     // MARK: - Send Token to Backend
@@ -123,9 +127,13 @@ class NotificationManager: NSObject {
     private func sendTokenToBackend(_ token: String) async {
         do {
             try await notificationService.registerDeviceToken(token)
+            #if DEBUG
             print("✅ Device token registered with backend")
+            #endif
         } catch {
+            #if DEBUG
             print("❌ Failed to register token with backend: \(error.localizedDescription)")
+            #endif
             // We don't show this error to the user — it will retry next app launch
         }
     }
@@ -138,7 +146,9 @@ class NotificationManager: NSObject {
         // The notification payload from the server might include a session ID
         // so we can navigate the user to that session
         if let sessionId = userInfo["sessionId"] as? String {
+            #if DEBUG
             print("🔔 Notification for session: \(sessionId)")
+            #endif
             // Post a notification so views can react (e.g., navigate to the session)
             NotificationCenter.default.post(
                 name: .didReceiveSessionNotification,

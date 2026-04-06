@@ -74,6 +74,7 @@ struct SpikeballIcon: View {
                 .frame(width: size * 0.85, height: size * 0.85)
         }
         .shadow(color: ballYellowDark.opacity(0.4), radius: 12, y: 6)
+        .accessibilityHidden(true)
     }
 }
 
@@ -149,6 +150,7 @@ struct CreateGroupScreen: View {
                         .font(.title3)
                         .foregroundColor(AppTheme.foreground)
                 }
+                .accessibilityLabel("Back")
                 Spacer()
             }
 
@@ -298,6 +300,7 @@ struct JoinGroupScreen: View {
                         .font(.title3)
                         .foregroundColor(AppTheme.foreground)
                 }
+                .accessibilityLabel("Back")
                 Spacer()
             }
 

@@ -125,9 +125,6 @@ struct SpikersApp: App {
                 .task {
                     UNUserNotificationCenter.current().delegate = NotificationManager.shared
                     await NotificationManager.shared.checkPermissionStatus()
-                    if !NotificationManager.shared.isPermissionGranted {
-                        await NotificationManager.shared.requestPermission()
-                    }
                 }
                 .onOpenURL { url in
                     handleDeepLink(url)

@@ -16,11 +16,18 @@ struct ContentView: View {
                     SessionsListView()
                 }
 
-                Tab("Players", systemImage: "person.2.fill", value: 2) {
+                Tab("Messages", systemImage: "megaphone", value: 2) {
+                    GroupMessagesView()
+                }
+
+                Tab("Players", systemImage: "person.2.fill", value: 3) {
                     PlayersListView()
                 }
             }
             .tint(AppTheme.accent)
+            .onReceive(NotificationCenter.default.publisher(for: .didReceiveSessionNotification)) { _ in
+                selectedTab = 1
+            }
         } else {
             OnboardingView()
         }

@@ -27,6 +27,7 @@ struct PlayerChip: View {
         .padding(.vertical, 4)
         .background(AppTheme.card02)
         .cornerRadius(12)
+        .accessibilityLabel("\(name)\(isWinner ? ", winner" : "")")
     }
 }
 
@@ -57,5 +58,7 @@ struct PlayerRow: View {
                 .foregroundColor(AppTheme.accent)
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(player.name), rating \(player.rating)")
     }
 }

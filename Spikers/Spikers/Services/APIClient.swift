@@ -46,12 +46,10 @@ final class APIClient: Sendable {
     let baseURL: String
 
     private let session: URLSession
-    private let decoder: JSONDecoder
 
     init(baseURL: String = "https://spikers-production.up.railway.app") {
         self.baseURL = baseURL
         self.session = URLSession.shared
-        self.decoder = JSONDecoder()
     }
 
     // MARK: - Core request methods
@@ -81,6 +79,17 @@ final class APIClient: Sendable {
         let url = try buildURL(path: path)
         var request = URLRequest(url: url)
         request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        applyGroupHeader(&request)
+        return try await perform(request)
+    }
+
+    /// Perform a PUT request with a JSON body and decode the response
+    func put<T: Decodable>(_ path: String, body: [String: Any]) async throws -> T {
+        let url = try buildURL(path: path)
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         applyGroupHeader(&request)

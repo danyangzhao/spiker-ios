@@ -1,8 +1,10 @@
 import SwiftUI
+import UserNotifications
 
 // MARK: - Settings View
 struct SettingsView: View {
     @State private var groupManager = GroupManager.shared
+    @State private var notificationManager = NotificationManager.shared
     @State private var showCreateSheet = false
     @State private var showJoinSheet = false
 
@@ -86,6 +88,60 @@ struct SettingsView: View {
                         } label: {
                             Label("Create New Group", systemImage: "plus.circle")
                                 .foregroundColor(AppTheme.foreground)
+                        }
+                        .listRowBackground(AppTheme.card)
+                    }
+
+                    // Notifications
+                    Section("Notifications") {
+                        HStack {
+                            Label(
+                                notificationManager.isPermissionGranted ? "Enabled" : "Disabled",
+                                systemImage: notificationManager.isPermissionGranted ? "bell.fill" : "bell.slash"
+                            )
+                            .foregroundColor(AppTheme.foreground)
+                            Spacer()
+                            if notificationManager.isPermissionGranted {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                            }
+                        }
+                        .listRowBackground(AppTheme.card)
+
+                        if !notificationManager.isPermissionGranted {
+                            Button {
+                                Task {
+                                    let settings = await UNUserNotificationCenter.current().notificationSettings()
+                                    if settings.authorizationStatus == .notDetermined {
+                                        await notificationManager.requestPermission()
+                                    } else {
+                                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                                            await UIApplication.shared.open(url)
+                                        }
+                                    }
+                                }
+                            } label: {
+                                Label("Enable Notifications", systemImage: "gear")
+                                    .foregroundColor(AppTheme.accent)
+                            }
+                            .listRowBackground(AppTheme.card)
+                        }
+                    }
+
+                    // About
+                    Section {
+                        Link(destination: URL(string: "https://danyangzhao.com/spikers/privacy.html")!) {
+                            Label("Privacy Policy", systemImage: "hand.raised")
+                                .foregroundColor(AppTheme.foreground)
+                        }
+                        .listRowBackground(AppTheme.card)
+
+                        HStack {
+                            Text("Version")
+                                .foregroundColor(AppTheme.secondaryText)
+                            Spacer()
+                            Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+                                .foregroundColor(AppTheme.secondaryText)
                         }
                         .listRowBackground(AppTheme.card)
                     }
