@@ -10,17 +10,18 @@ import Foundation
 struct NotificationService {
     private let client = APIClient.shared
 
-    /// POST /api/notifications/register - Register a device token with the backend.
-    /// The backend stores this token so it can send push notifications to this device.
-    ///
-    /// Request body: { "token": "abc123...", "platform": "ios" }
+    /// Register a device token with the backend, associated with the current group.
     func registerDeviceToken(_ token: String) async throws {
+        var body: [String: Any] = [
+            "token": token,
+            "platform": "ios"
+        ]
+        if let groupId = GroupManager.shared.currentGroupId {
+            body["groupId"] = groupId
+        }
         let _: [String: String] = try await client.post(
             "/api/notifications/register",
-            body: [
-                "token": token,
-                "platform": "ios"
-            ]
+            body: body
         )
     }
 

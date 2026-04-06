@@ -55,10 +55,16 @@ final class GroupManager {
         }
     }
 
-    /// Switch to a previously joined group
+    /// Switch to a previously joined group and re-register the device token
     func switchToGroup(id: String, name: String) {
         currentGroupId = id
         currentGroupName = name
+
+        if let token = NotificationManager.shared.deviceToken {
+            Task {
+                try? await NotificationService().registerDeviceToken(token)
+            }
+        }
     }
 
     /// Clear the current group (for testing or sign-out)
