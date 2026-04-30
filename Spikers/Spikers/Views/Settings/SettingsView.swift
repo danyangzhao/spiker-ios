@@ -130,7 +130,7 @@ struct SettingsView: View {
 
                     // About
                     Section {
-                        Link(destination: URL(string: "https://danyangzhao.com/spikers/privacy.html")!) {
+                        Link(destination: URL(string: "https://sagebearapps.com/spikers/privacy")!) {
                             Label("Privacy Policy", systemImage: "hand.raised")
                                 .foregroundColor(AppTheme.foreground)
                         }
