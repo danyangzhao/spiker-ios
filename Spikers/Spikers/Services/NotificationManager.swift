@@ -79,6 +79,17 @@ class NotificationManager: NSObject {
         }
     }
 
+    /// Prompt the user for permission only if they've never been asked.
+    /// Used at app launch for users upgrading from a version that didn't request permission yet.
+    /// Calling `requestAuthorization` when status is `.denied` or `.authorized` is a no-op,
+    /// but we gate on `.notDetermined` to be explicit.
+    func promptIfNotDetermined() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        if settings.authorizationStatus == .notDetermined {
+            await requestPermission()
+        }
+    }
+
     // MARK: - Register for Remote Notifications
 
     /// Tell iOS we want to receive remote (push) notifications.

@@ -125,6 +125,12 @@ struct SpikersApp: App {
                 .task {
                     UNUserNotificationCenter.current().delegate = NotificationManager.shared
                     await NotificationManager.shared.checkPermissionStatus()
+                    // Existing users who already have a group but were never asked
+                    // (e.g., upgrading from a version before push was wired up)
+                    // should still see the system permission prompt on next launch.
+                    if GroupManager.shared.hasGroup {
+                        await NotificationManager.shared.promptIfNotDetermined()
+                    }
                 }
                 .onOpenURL { url in
                     handleDeepLink(url)
