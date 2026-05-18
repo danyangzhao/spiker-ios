@@ -18,6 +18,10 @@ struct HomeView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 20) {
+                            if let upcomingSeason = viewModel.upcomingSeason {
+                                UpcomingSeasonBanner(season: upcomingSeason)
+                            }
+
                             // Live Session Alert
                             if let live = viewModel.liveSession {
                                 LiveSessionBanner(session: live)
@@ -58,6 +62,79 @@ struct HomeView: View {
                 await viewModel.loadData()
             }
         }
+    }
+}
+
+// MARK: - Upcoming Season Banner
+struct UpcomingSeasonBanner: View {
+    let season: Season
+
+    private var seasonStartDate: Date? {
+        parseISODate(season.scheduledStartAt ?? season.startedAt)
+    }
+
+    var body: some View {
+        NavigationLink(destination: SeasonDetailView(season: season)) {
+            HStack(spacing: 12) {
+                Image(systemName: "calendar.badge.clock")
+                    .foregroundColor(.white)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(titleText)
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+
+                    Text(subtitleText)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.85))
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.white.opacity(0.85))
+            }
+            .padding()
+            .background(
+                LinearGradient(
+                    colors: [AppTheme.accent.opacity(0.95), Color.orange.opacity(0.7)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .cornerRadius(16)
+        }
+        .accessibilityLabel(titleText)
+        .accessibilityHint("Double tap to preview the upcoming season")
+    }
+
+    private var titleText: String {
+        if let seasonStartDate {
+            let relativeFormatter = RelativeDateTimeFormatter()
+            relativeFormatter.unitsStyle = .full
+            let relative = relativeFormatter.localizedString(for: seasonStartDate, relativeTo: Date())
+            return "\(season.name) starts \(relative)"
+        }
+        return "\(season.name) is announced"
+    }
+
+    private var subtitleText: String {
+        if let dateString = season.scheduledStartAt ?? season.startedAt {
+            return formatDate(dateString)
+        }
+        return "Tap to preview season details"
+    }
+
+    private func parseISODate(_ dateString: String?) -> Date? {
+        guard let dateString else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: dateString) {
+            return date
+        }
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: dateString)
     }
 }
 

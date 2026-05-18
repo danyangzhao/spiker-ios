@@ -6,6 +6,8 @@ struct Season: Codable, Identifiable, Hashable {
     let name: String
     let number: Int
     let startedAt: String
+    let scheduledStartAt: String?
+    let announcedAt: String?
     let endedAt: String?
     let isActive: Bool
 }
@@ -16,6 +18,8 @@ struct SeasonDetail: Codable {
     let name: String
     let number: Int
     let startedAt: String
+    let scheduledStartAt: String?
+    let announcedAt: String?
     let endedAt: String?
     let isActive: Bool
     let standings: [SeasonStanding]

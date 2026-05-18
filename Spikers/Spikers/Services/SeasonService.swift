@@ -16,12 +16,17 @@ struct SeasonService {
     }
 
     /// POST /api/seasons - Start a new season and reset carried players.
-    func startSeason(name: String?, carryOverPlayerIds: [String]) async throws -> Season {
+    func startSeason(name: String?, carryOverPlayerIds: [String], scheduledStartAt: Date? = nil) async throws -> Season {
         var body: [String: Any] = [
             "carryOverPlayerIds": carryOverPlayerIds
         ]
         if let name, !name.trimmingCharacters(in: .whitespaces).isEmpty {
             body["name"] = name.trimmingCharacters(in: .whitespaces)
+        }
+        if let scheduledStartAt {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            body["scheduledStartAt"] = formatter.string(from: scheduledStartAt)
         }
         return try await client.post("/api/seasons", body: body)
     }

@@ -8,11 +8,13 @@ class HomeViewModel {
     var liveSessions: [Session] = []
     var upcomingSessions: [Session] = []
     var recentSessions: [Session] = []
+    var upcomingSeason: Season?
     var isLoading = false
     var errorMessage: String?
 
     private let playerService = PlayerService()
     private let sessionService = SessionService()
+    private let seasonService = SeasonService()
     private let hiddenSessionsManager = HiddenSessionsManager()
 
     /// Top 5 players sorted by rating (descending)
@@ -41,9 +43,10 @@ class HomeViewModel {
             async let liveTask = sessionService.fetchSessions(status: .IN_PROGRESS)
             async let upcomingTask = sessionService.fetchSessions(status: .UPCOMING)
             async let recentTask = sessionService.fetchSessions(status: .COMPLETED, limit: 3)
+            async let upcomingSeasonTask = fetchUpcomingSeason()
 
-            let (fetchedPlayers, fetchedLive, fetchedUpcoming, fetchedRecent) =
-                try await (playersTask, liveTask, upcomingTask, recentTask)
+            let (fetchedPlayers, fetchedLive, fetchedUpcoming, fetchedRecent, fetchedUpcomingSeason) =
+                try await (playersTask, liveTask, upcomingTask, recentTask, upcomingSeasonTask)
 
             // Filter out any sessions the user has hidden locally
             let hiddenIds = hiddenSessionsManager.hiddenIds()
@@ -52,10 +55,42 @@ class HomeViewModel {
             liveSessions = fetchedLive.filter { !hiddenIds.contains($0.id) }
             upcomingSessions = fetchedUpcoming.filter { !hiddenIds.contains($0.id) }
             recentSessions = fetchedRecent.filter { !hiddenIds.contains($0.id) }
+            upcomingSeason = fetchedUpcomingSeason
         } catch {
             errorMessage = error.localizedDescription
         }
 
         isLoading = false
+    }
+
+    private func fetchUpcomingSeason() async -> Season? {
+        do {
+            let seasons = try await seasonService.fetchSeasons()
+            return seasons
+                .filter {
+                    guard !$0.isActive else { return false }
+                    guard let scheduledDate = parseISODate($0.scheduledStartAt ?? $0.startedAt) else { return false }
+                    return scheduledDate > Date() && $0.endedAt == nil
+                }
+                .sorted {
+                    guard let left = parseISODate($0.scheduledStartAt ?? $0.startedAt) else { return false }
+                    guard let right = parseISODate($1.scheduledStartAt ?? $1.startedAt) else { return true }
+                    return left < right
+                }
+                .first
+        } catch {
+            return nil
+        }
+    }
+
+    private func parseISODate(_ dateString: String?) -> Date? {
+        guard let dateString else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: dateString) {
+            return date
+        }
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: dateString)
     }
 }

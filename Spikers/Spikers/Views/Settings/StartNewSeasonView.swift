@@ -14,10 +14,13 @@ struct StartNewSeasonView: View {
     @State private var players: [Player] = []
     @State private var selectedPlayerIds = Set<String>()
     @State private var seasonName = ""
+    @State private var scheduleForLater = false
+    @State private var scheduledStartDate = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
     @State private var isLoadingPlayers = true
     @State private var isSubmitting = false
     @State private var errorMessage: String?
     @State private var showSuccessAlert = false
+    @State private var createdSeason: Season?
 
     private let playerService = PlayerService()
     private let seasonService = SeasonService()
@@ -30,28 +33,35 @@ struct StartNewSeasonView: View {
                 if isLoadingPlayers {
                     LoadingView(message: "Loading players...")
                 } else {
-                    VStack(spacing: 16) {
-                        header
+                    VStack(spacing: 0) {
+                        ScrollView {
+                            VStack(spacing: 16) {
+                                header
 
-                        switch step {
-                        case .confirm:
-                            confirmStep
-                        case .roster:
-                            rosterStep
-                        case .naming:
-                            namingStep
+                                switch step {
+                                case .confirm:
+                                    confirmStep
+                                case .roster:
+                                    rosterStep
+                                case .naming:
+                                    namingStep
+                                }
+
+                                if let errorMessage {
+                                    Text(errorMessage)
+                                        .font(.caption)
+                                        .foregroundColor(.red)
+                                        .multilineTextAlignment(.center)
+                                }
+                            }
+                            .padding(.horizontal)
+                            .padding(.top)
+                            .padding(.bottom, 12)
                         }
-
-                        if let errorMessage {
-                            Text(errorMessage)
-                                .font(.caption)
-                                .foregroundColor(.red)
-                                .multilineTextAlignment(.center)
-                        }
-
                         footer
+                            .padding(.horizontal)
+                            .padding(.bottom)
                     }
-                    .padding()
                 }
             }
         }
@@ -61,12 +71,12 @@ struct StartNewSeasonView: View {
         .task {
             await loadPlayers()
         }
-        .alert("New season started", isPresented: $showSuccessAlert) {
+        .alert(successTitle, isPresented: $showSuccessAlert) {
             Button("Done") {
                 dismiss()
             }
         } message: {
-            Text("Ratings and season stats are now reset for selected players.")
+            Text(successMessage)
         }
     }
 
@@ -141,6 +151,23 @@ struct StartNewSeasonView: View {
             Text("\(selectedPlayerIds.count) player(s) will carry over and reset to base ELO.")
                 .font(.caption)
                 .foregroundColor(AppTheme.secondaryText)
+
+            Toggle("Schedule for later", isOn: $scheduleForLater)
+                .foregroundColor(AppTheme.foreground)
+
+            if scheduleForLater {
+                DatePicker(
+                    "Season starts",
+                    selection: $scheduledStartDate,
+                    in: Date()...,
+                    displayedComponents: [.date, .hourAndMinute]
+                )
+                .datePickerStyle(.compact)
+                .foregroundColor(AppTheme.foreground)
+                .padding()
+                .background(AppTheme.card)
+                .cornerRadius(10)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -222,9 +249,11 @@ struct StartNewSeasonView: View {
 
         isSubmitting = true
         do {
-            _ = try await seasonService.startSeason(
+            let scheduledStartAt = scheduleForLater ? scheduledStartDate : nil
+            createdSeason = try await seasonService.startSeason(
                 name: seasonName,
-                carryOverPlayerIds: Array(selectedPlayerIds)
+                carryOverPlayerIds: Array(selectedPlayerIds),
+                scheduledStartAt: scheduledStartAt
             )
             showSuccessAlert = true
         } catch let apiError as APIError {
@@ -237,5 +266,19 @@ struct StartNewSeasonView: View {
             errorMessage = error.localizedDescription
         }
         isSubmitting = false
+    }
+
+    private var successTitle: String {
+        if createdSeason?.isActive == false {
+            return "Season change announced"
+        }
+        return "New season started"
+    }
+
+    private var successMessage: String {
+        if createdSeason?.isActive == false {
+            return "Your next season is scheduled and announced. The home banner will show the upcoming change."
+        }
+        return "Ratings and season stats are now reset for selected players."
     }
 }

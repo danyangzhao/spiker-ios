@@ -84,7 +84,7 @@ struct PastSeasonsView: View {
     }
 
     private var pastSeasons: [Season] {
-        seasons.filter { !$0.isActive }
+        seasons.filter { !$0.isActive && $0.endedAt != nil }
     }
 }
 
@@ -134,6 +134,28 @@ struct SeasonDetailView: View {
                         }
                     }
 
+                    Section("Highlights") {
+                        ForEach(highlightItems(for: detail)) { item in
+                            HStack(alignment: .top, spacing: 12) {
+                                Text(item.icon)
+                                    .font(.title3)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(item.title)
+                                        .foregroundColor(AppTheme.foreground)
+                                    Text(item.subtitle)
+                                        .font(.caption)
+                                        .foregroundColor(AppTheme.secondaryText)
+                                }
+                                Spacer()
+                                Text(item.value)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(AppTheme.accent)
+                            }
+                            .listRowBackground(AppTheme.card)
+                        }
+                    }
+
                     Section("Badges Earned") {
                         if detail.badges.isEmpty {
                             Text("No badges earned this season yet.")
@@ -163,12 +185,14 @@ struct SeasonDetailView: View {
                                 .listRowBackground(AppTheme.card)
                         } else {
                             ForEach(detail.sessions) { session in
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(session.date)
-                                        .foregroundColor(AppTheme.foreground)
-                                    Text("\(session.count.games) games • \(session.count.attendances) attendees")
-                                        .font(.caption)
-                                        .foregroundColor(AppTheme.secondaryText)
+                                NavigationLink(destination: SessionDetailView(sessionId: session.id)) {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(formatDate(session.date))
+                                            .foregroundColor(AppTheme.foreground)
+                                        Text("\(session.count.games) games • \(session.count.attendances) attendees")
+                                            .font(.caption)
+                                            .foregroundColor(AppTheme.secondaryText)
+                                    }
                                 }
                                 .listRowBackground(AppTheme.card)
                             }
@@ -195,5 +219,93 @@ struct SeasonDetailView: View {
             errorMessage = error.localizedDescription
         }
         isLoading = false
+    }
+
+    private struct HighlightItem: Identifiable {
+        let id = UUID()
+        let icon: String
+        let title: String
+        let subtitle: String
+        let value: String
+    }
+
+    private func highlightItems(for detail: SeasonDetail) -> [HighlightItem] {
+        guard !detail.standings.isEmpty else {
+            return [
+                HighlightItem(
+                    icon: "✨",
+                    title: "Season Recap",
+                    subtitle: "No standings recorded for this season.",
+                    value: "--"
+                )
+            ]
+        }
+
+        let mvp = detail.standings.min { $0.rank < $1.rank } ?? detail.standings[0]
+        let mostWins = detail.standings.max { lhs, rhs in
+            if lhs.wins != rhs.wins { return lhs.wins < rhs.wins }
+            return lhs.losses > rhs.losses
+        } ?? mvp
+        let longestStreak = detail.standings.max { $0.longestWinStreak < $1.longestWinStreak } ?? mvp
+        let bestPointDiff = detail.standings.max {
+            ($0.pointsFor - $0.pointsAgainst) < ($1.pointsFor - $1.pointsAgainst)
+        } ?? mvp
+        let mostGames = detail.standings.max { $0.gamesPlayed < $1.gamesPlayed } ?? mvp
+
+        let badgeCounts = Dictionary(grouping: detail.badges, by: \.player.id)
+        let topBadgePlayer = badgeCounts.max { $0.value.count < $1.value.count }
+        let badgeSummary: (name: String, value: String) = {
+            guard let topBadgePlayer else { return ("No badges awarded", "--") }
+            let playerName = topBadgePlayer.value.first?.player.name ?? "Unknown"
+            return (playerName, "\(topBadgePlayer.value.count)")
+        }()
+
+        let totalGames = detail.sessions.reduce(0) { $0 + $1.count.games }
+        let totalAttendance = detail.sessions.reduce(0) { $0 + $1.count.attendances }
+
+        return [
+            HighlightItem(
+                icon: "🏆",
+                title: "MVP",
+                subtitle: mvp.player.name,
+                value: "\(mvp.finalRating)"
+            ),
+            HighlightItem(
+                icon: "🔥",
+                title: "Most Wins",
+                subtitle: mostWins.player.name,
+                value: "\(mostWins.wins)"
+            ),
+            HighlightItem(
+                icon: "📈",
+                title: "Longest Win Streak",
+                subtitle: longestStreak.player.name,
+                value: "\(longestStreak.longestWinStreak)"
+            ),
+            HighlightItem(
+                icon: "🎯",
+                title: "Best Point Differential",
+                subtitle: bestPointDiff.player.name,
+                value: "\(bestPointDiff.pointsFor - bestPointDiff.pointsAgainst)"
+            ),
+            HighlightItem(
+                icon: "🕹️",
+                title: "Most Games Played",
+                subtitle: mostGames.player.name,
+                value: "\(mostGames.gamesPlayed)"
+            ),
+            HighlightItem(
+                icon: "🥇",
+                title: "Top Badge Collector",
+                subtitle: badgeSummary.name,
+                value: badgeSummary.value
+            ),
+            HighlightItem(
+                icon: "📊",
+                title: "Season Totals",
+                subtitle: "\(detail.sessions.count) sessions • \(totalAttendance) total attendees",
+                value: "\(totalGames) games"
+            ),
+        ]
     }
 }
