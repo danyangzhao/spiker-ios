@@ -26,6 +26,40 @@ struct PlayerDetailView: View {
                     // Player header
                     PlayerHeader(player: stats.player, streak: stats.attendanceStreak)
 
+                    if !viewModel.seasons.isEmpty {
+                        HStack {
+                            Text("Season")
+                                .font(.caption)
+                                .foregroundColor(AppTheme.secondaryText)
+
+                            Spacer()
+
+                            Menu {
+                                ForEach(viewModel.seasons) { season in
+                                    Button {
+                                        Task {
+                                            await viewModel.loadStats(seasonId: season.id)
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Text(season.isActive ? "\(season.name) (Current)" : season.name)
+                                            if viewModel.selectedSeasonId == season.id {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+                                }
+                            } label: {
+                                let selectedSeason = viewModel.seasons.first(where: { $0.id == viewModel.selectedSeasonId })
+                                Text(selectedSeason?.name ?? "Current Season")
+                                    .font(.subheadline)
+                                    .foregroundColor(AppTheme.accent)
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 10)
+                    }
+
                     // Tab picker
                     Picker("Section", selection: $selectedTab) {
                         Text("Stats").tag(0)

@@ -7,6 +7,8 @@ class PlayerDetailViewModel {
     let playerId: String
 
     var stats: PlayerStatsResponse?
+    var seasons: [PlayerStatsSeason] = []
+    var selectedSeasonId: String?
     var isLoading = false
     var errorMessage: String?
 
@@ -16,12 +18,18 @@ class PlayerDetailViewModel {
         self.playerId = playerId
     }
 
-    func loadStats() async {
+    func loadStats(seasonId: String? = nil) async {
         isLoading = true
         errorMessage = nil
 
         do {
-            stats = try await playerService.fetchPlayerStats(id: playerId)
+            let response = try await playerService.fetchPlayerStats(
+                id: playerId,
+                seasonId: seasonId ?? selectedSeasonId
+            )
+            stats = response
+            seasons = response.seasons ?? []
+            selectedSeasonId = response.selectedSeasonId ?? seasonId
         } catch {
             errorMessage = error.localizedDescription
         }

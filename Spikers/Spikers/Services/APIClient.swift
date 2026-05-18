@@ -31,12 +31,6 @@ enum APIError: LocalizedError {
     }
 }
 
-// MARK: - Error response from the API
-struct APIErrorResponse: Codable {
-    let error: String
-    let details: String?
-}
-
 // MARK: - API Client
 /// A simple HTTP client that talks to the Spikers API on Railway.
 /// All methods are async and throw APIError on failure.
@@ -153,16 +147,9 @@ final class APIClient: Sendable {
 
         // Check for HTTP errors (4xx, 5xx)
         guard (200...299).contains(httpResponse.statusCode) else {
-            // Try to parse error message from response body
-            if let errorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
-                throw APIError.httpError(
-                    statusCode: httpResponse.statusCode,
-                    message: errorResponse.error
-                )
-            }
             throw APIError.httpError(
                 statusCode: httpResponse.statusCode,
-                message: "Unknown error"
+                message: parseServerErrorMessage(from: data, statusCode: httpResponse.statusCode)
             )
         }
 
@@ -173,5 +160,45 @@ final class APIClient: Sendable {
         } catch {
             throw APIError.decodingError(error)
         }
+    }
+
+    private nonisolated func parseServerErrorMessage(from data: Data, statusCode: Int) -> String {
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let message = json["error"] as? String,
+           !message.isEmpty {
+            return message
+        }
+
+        if let message = String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) {
+            let lowered = message.lowercased()
+            // Don't show full HTML pages in app errors.
+            if lowered.contains("<!doctype html") || lowered.contains("<html") || lowered.contains("<head") {
+                if statusCode == 404 {
+                    return "This feature is not available on the server yet. Please try again after backend deployment."
+                }
+                if statusCode >= 500 {
+                    return "The server had an issue. Please try again in a moment."
+                }
+                return "The server returned an unexpected response. Please try again."
+            }
+
+            if !message.isEmpty {
+                return message
+            }
+        }
+
+        if statusCode == 404 {
+            return "Feature not found on server."
+        }
+        if statusCode >= 500 {
+            return "Server error. Please try again."
+        }
+
+        if !HTTPURLResponse.localizedString(forStatusCode: statusCode).isEmpty {
+            return HTTPURLResponse.localizedString(forStatusCode: statusCode).capitalized
+        }
+
+        return "Unknown error"
     }
 }

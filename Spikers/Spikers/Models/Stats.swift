@@ -10,6 +10,15 @@ struct PlayerStatsResponse: Codable {
     let badges: [EarnedBadge]
     let allBadges: [Badge]?
     let badgeProgress: [BadgeProgress]?
+    let seasons: [PlayerStatsSeason]?
+    let selectedSeasonId: String?
+}
+
+struct PlayerStatsSeason: Codable, Identifiable {
+    let id: String
+    let name: String
+    let number: Int
+    let isActive: Bool
 }
 
 struct PlayerBasicInfo: Codable {

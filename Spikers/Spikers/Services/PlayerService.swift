@@ -6,10 +6,14 @@ struct PlayerService {
     private let client = APIClient.shared
 
     /// GET /api/players - List all players
-    func fetchPlayers(activeOnly: Bool = true) async throws -> [Player] {
-        try await client.get(
+    func fetchPlayers(activeOnly: Bool = true, seasonId: String? = nil) async throws -> [Player] {
+        var queryItems = [URLQueryItem(name: "activeOnly", value: String(activeOnly))]
+        if let seasonId {
+            queryItems.append(URLQueryItem(name: "seasonId", value: seasonId))
+        }
+        return try await client.get(
             "/api/players",
-            queryItems: [URLQueryItem(name: "activeOnly", value: String(activeOnly))]
+            queryItems: queryItems
         )
     }
 
@@ -36,7 +40,11 @@ struct PlayerService {
     }
 
     /// GET /api/players/[id]/stats - Get computed stats for a player
-    func fetchPlayerStats(id: String) async throws -> PlayerStatsResponse {
-        try await client.get("/api/players/\(id)/stats")
+    func fetchPlayerStats(id: String, seasonId: String? = nil) async throws -> PlayerStatsResponse {
+        var queryItems: [URLQueryItem] = []
+        if let seasonId {
+            queryItems.append(URLQueryItem(name: "seasonId", value: seasonId))
+        }
+        return try await client.get("/api/players/\(id)/stats", queryItems: queryItems.isEmpty ? nil : queryItems)
     }
 }

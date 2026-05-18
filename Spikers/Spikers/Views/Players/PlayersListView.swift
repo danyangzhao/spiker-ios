@@ -13,7 +13,7 @@ struct PlayersListView: View {
                     LoadingView(message: "Loading players...")
                 } else if let error = viewModel.errorMessage, viewModel.players.isEmpty {
                     ErrorView(message: error) {
-                        Task { await viewModel.loadPlayers() }
+                        Task { await viewModel.loadInitialData() }
                     }
                 } else if viewModel.players.isEmpty {
                     EmptyStateView(
@@ -23,17 +23,50 @@ struct PlayersListView: View {
                     )
                 } else {
                     ScrollView {
-                        VStack(spacing: 8) {
+                        VStack(spacing: 12) {
+                            HStack {
+                                Text("Leaderboard: \(viewModel.selectedSeasonLabel)")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(AppTheme.secondaryText)
+
+                                Spacer()
+
+                                if !viewModel.seasons.isEmpty {
+                                    Menu {
+                                        ForEach(viewModel.seasons) { season in
+                                            Button {
+                                                viewModel.selectedSeasonId = season.id
+                                                Task { await viewModel.loadPlayers() }
+                                            } label: {
+                                                HStack {
+                                                    Text(season.isActive ? "\(season.name) (Current)" : season.name)
+                                                    if viewModel.selectedSeasonId == season.id {
+                                                        Image(systemName: "checkmark")
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } label: {
+                                        Image(systemName: "line.3.horizontal.decrease.circle")
+                                            .foregroundColor(AppTheme.accent)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 2)
+
+                            VStack(spacing: 8) {
                             ForEach(viewModel.sortedPlayers) { player in
                                 NavigationLink(destination: PlayerDetailView(playerId: player.id)) {
                                     PlayerListCard(player: player)
                                 }
                             }
                         }
+                        }
                         .padding()
                     }
                     .refreshable {
-                        await viewModel.loadPlayers()
+                        await viewModel.loadInitialData()
                     }
                 }
             }
@@ -53,7 +86,7 @@ struct PlayersListView: View {
                 AddPlayerView(viewModel: viewModel)
             }
             .task {
-                await viewModel.loadPlayers()
+                await viewModel.loadInitialData()
             }
         }
     }

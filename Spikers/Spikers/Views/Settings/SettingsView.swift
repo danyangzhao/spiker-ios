@@ -128,6 +128,21 @@ struct SettingsView: View {
                         }
                     }
 
+                    // Seasons
+                    Section("Seasons") {
+                        NavigationLink(destination: StartNewSeasonView()) {
+                            Label("Start New Season", systemImage: "arrow.clockwise.circle")
+                                .foregroundColor(AppTheme.foreground)
+                        }
+                        .listRowBackground(AppTheme.card)
+
+                        NavigationLink(destination: PastSeasonsView()) {
+                            Label("Past Seasons", systemImage: "clock.arrow.circlepath")
+                                .foregroundColor(AppTheme.foreground)
+                        }
+                        .listRowBackground(AppTheme.card)
+                    }
+
                     // About
                     Section {
                         Link(destination: URL(string: "https://sagebearapps.com/spikers/privacy")!) {
