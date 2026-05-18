@@ -257,8 +257,18 @@ struct StartNewSeasonView: View {
             )
             showSuccessAlert = true
         } catch let apiError as APIError {
-            if case let .httpError(statusCode, _) = apiError, statusCode == 404 {
-                errorMessage = "Starting seasons is not available on the server yet. Please deploy/update the backend first."
+            if case let .httpError(statusCode, message) = apiError {
+                if statusCode == 404 || statusCode == 500 {
+                    if scheduleForLater {
+                        errorMessage = "Scheduled seasons are not available on the server yet. Please deploy/update backend migrations and try again."
+                    } else {
+                        errorMessage = "Starting seasons is not available on the server yet. Please deploy/update the backend first."
+                    }
+                } else if statusCode == 409 {
+                    errorMessage = message
+                } else {
+                    errorMessage = apiError.localizedDescription
+                }
             } else {
                 errorMessage = apiError.localizedDescription
             }
