@@ -9,6 +9,7 @@ class HomeViewModel {
     var upcomingSessions: [Session] = []
     var recentSessions: [Session] = []
     var upcomingSeason: Season?
+    var currentActiveSeason: Season?
     var isLoading = false
     var errorMessage: String?
 
@@ -43,10 +44,10 @@ class HomeViewModel {
             async let liveTask = sessionService.fetchSessions(status: .IN_PROGRESS)
             async let upcomingTask = sessionService.fetchSessions(status: .UPCOMING)
             async let recentTask = sessionService.fetchSessions(status: .COMPLETED, limit: 3)
-            async let upcomingSeasonTask = fetchUpcomingSeason()
+            async let seasonStateTask = fetchSeasonState()
 
-            let (fetchedPlayers, fetchedLive, fetchedUpcoming, fetchedRecent, fetchedUpcomingSeason) =
-                try await (playersTask, liveTask, upcomingTask, recentTask, upcomingSeasonTask)
+            let (fetchedPlayers, fetchedLive, fetchedUpcoming, fetchedRecent, seasonState) =
+                try await (playersTask, liveTask, upcomingTask, recentTask, seasonStateTask)
 
             // Filter out any sessions the user has hidden locally
             let hiddenIds = hiddenSessionsManager.hiddenIds()
@@ -55,7 +56,8 @@ class HomeViewModel {
             liveSessions = fetchedLive.filter { !hiddenIds.contains($0.id) }
             upcomingSessions = fetchedUpcoming.filter { !hiddenIds.contains($0.id) }
             recentSessions = fetchedRecent.filter { !hiddenIds.contains($0.id) }
-            upcomingSeason = fetchedUpcomingSeason
+            upcomingSeason = seasonState.upcomingSeason
+            currentActiveSeason = seasonState.currentActiveSeason
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -63,10 +65,10 @@ class HomeViewModel {
         isLoading = false
     }
 
-    private func fetchUpcomingSeason() async -> Season? {
+    private func fetchSeasonState() async -> (upcomingSeason: Season?, currentActiveSeason: Season?) {
         do {
             let seasons = try await seasonService.fetchSeasons()
-            return seasons
+            let upcoming = seasons
                 .filter {
                     guard !$0.isActive else { return false }
                     guard let scheduledDate = parseISODate($0.scheduledStartAt ?? $0.startedAt) else { return false }
@@ -78,8 +80,10 @@ class HomeViewModel {
                     return left < right
                 }
                 .first
+            let current = seasons.first(where: { $0.isActive })
+            return (upcoming, current)
         } catch {
-            return nil
+            return (nil, nil)
         }
     }
 

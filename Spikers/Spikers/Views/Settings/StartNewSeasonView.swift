@@ -250,6 +250,9 @@ struct StartNewSeasonView: View {
         isSubmitting = true
         do {
             let scheduledStartAt = scheduleForLater ? scheduledStartDate : nil
+#if DEBUG
+            print("[StartNewSeason] submit scheduleForLater=\(scheduleForLater) scheduledStartDate=\(scheduledStartDate.ISO8601Format()) trimmedName=\(seasonName.trimmingCharacters(in: .whitespacesAndNewlines))")
+#endif
             createdSeason = try await seasonService.startSeason(
                 name: seasonName,
                 carryOverPlayerIds: Array(selectedPlayerIds),

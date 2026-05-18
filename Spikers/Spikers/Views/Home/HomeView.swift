@@ -19,7 +19,10 @@ struct HomeView: View {
                     ScrollView {
                         VStack(spacing: 20) {
                             if let upcomingSeason = viewModel.upcomingSeason {
-                                UpcomingSeasonBanner(season: upcomingSeason)
+                                UpcomingSeasonBanner(
+                                    season: upcomingSeason,
+                                    currentSeason: viewModel.currentActiveSeason
+                                )
                             }
 
                             // Live Session Alert
@@ -68,13 +71,19 @@ struct HomeView: View {
 // MARK: - Upcoming Season Banner
 struct UpcomingSeasonBanner: View {
     let season: Season
+    let currentSeason: Season?
 
     private var seasonStartDate: Date? {
         parseISODate(season.scheduledStartAt ?? season.startedAt)
     }
 
     var body: some View {
-        NavigationLink(destination: SeasonDetailView(season: season)) {
+        NavigationLink(
+            destination: SeasonAnnouncementView(
+                upcomingSeason: season,
+                currentActiveSeason: currentSeason
+            )
+        ) {
             HStack(spacing: 12) {
                 Image(systemName: "calendar.badge.clock")
                     .foregroundColor(.white)
