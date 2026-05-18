@@ -120,10 +120,7 @@ struct UpcomingSeasonBanner: View {
     }
 
     private var subtitleText: String {
-        if let dateString = season.scheduledStartAt ?? season.startedAt {
-            return formatDate(dateString)
-        }
-        return "Tap to preview season details"
+        formatDate(season.scheduledStartAt ?? season.startedAt)
     }
 
     private func parseISODate(_ dateString: String?) -> Date? {

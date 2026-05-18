@@ -71,7 +71,8 @@ struct PastSeasonsView: View {
             // Graceful handling:
             // - First season often has no historical data.
             // - Older backend deployments may not have /api/seasons yet (404).
-            if case let .httpError(statusCode, _) = apiError, statusCode == 404 {
+            // - Deploys with pending DB migrations can temporarily return 500.
+            if case let .httpError(statusCode, _) = apiError, statusCode == 404 || statusCode == 500 {
                 seasons = []
                 errorMessage = nil
             } else {
