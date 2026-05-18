@@ -5,9 +5,11 @@ struct SeasonAnnouncementView: View {
     let currentActiveSeason: Season?
 
     @State private var carryOverPlayers: [Player] = []
+    @State private var resolvedCurrentSeason: Season?
     @State private var isLoadingPlayers = true
 
     private let playerService = PlayerService()
+    private let seasonService = SeasonService()
 
     var body: some View {
         ZStack {
@@ -54,8 +56,8 @@ struct SeasonAnnouncementView: View {
                 }
 
                 Section {
-                    if let currentActiveSeason {
-                        NavigationLink(destination: SeasonDetailView(season: currentActiveSeason)) {
+                    if let resolvedCurrentSeason {
+                        NavigationLink(destination: SeasonDetailView(season: resolvedCurrentSeason)) {
                             Text("View current season")
                                 .fontWeight(.semibold)
                                 .frame(maxWidth: .infinity, alignment: .center)
@@ -75,7 +77,9 @@ struct SeasonAnnouncementView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
+            resolvedCurrentSeason = currentActiveSeason?.id == upcomingSeason.id ? nil : currentActiveSeason
             await loadCarryOverPlayers()
+            await resolveCurrentSeason()
         }
     }
 
@@ -110,6 +114,17 @@ struct SeasonAnnouncementView: View {
                 .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         } catch {
             carryOverPlayers = []
+        }
+    }
+
+    private func resolveCurrentSeason() async {
+        do {
+            let seasons = try await seasonService.fetchSeasons()
+            if let activeSeason = seasons.first(where: { $0.isActive && $0.id != upcomingSeason.id }) {
+                resolvedCurrentSeason = activeSeason
+            }
+        } catch {
+            // Keep the best known current season if season fetch fails.
         }
     }
 }

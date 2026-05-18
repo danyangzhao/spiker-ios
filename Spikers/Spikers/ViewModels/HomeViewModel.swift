@@ -80,7 +80,9 @@ class HomeViewModel {
                     return left < right
                 }
                 .first
-            let current = seasons.first(where: { $0.isActive })
+            let current = seasons.first(where: { season in
+                season.isActive && season.id != upcoming?.id
+            })
             return (upcoming, current)
         } catch {
             return (nil, nil)
